@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report List - Rwanda Report System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="flag-icon">🇷🇼</div>
+                <span class="logo-text">Rwanda Report System</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/report/submit/" class="nav-link">Report Incident</a>
+                <a href="/report/status/" class="nav-link">Check Status</a>
+                <a href="/dashboard/" class="nav-link admin-login">Admin Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Reports List Section -->
+    <section class="status-section" style="padding: 100px 0 80px;">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">Public Reports</h1>
+                <a href="/" class="btn btn-outline">← Back to Home</a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <p style="text-align: center; color: #666; padding: 40px;">
+                        This page would show public reports (anonymized) for transparency.<br>
+                        For security reasons, detailed reports are only accessible to authorized personnel.
+                    </p>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="/report/submit/" class="btn btn-primary">Report New Incident</a>
+                        <a href="/report/status/" class="btn btn-outline" style="margin-left: 15px;">Check Report Status</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

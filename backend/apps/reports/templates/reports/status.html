@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Status - Rwanda Report System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #0088ce;
+            --primary-dark: #0066a4;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-color: #e2e8f0;
+            --background-light: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .status-card {
+            background: var(--background-light);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .reference-code {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .status-new { background: var(--primary-color); color: white; }
+        .status-in_review { background: var(--warning-color); color: black; }
+        .status-forwarded { background: #17a2b8; color: white; }
+        .status-actioned { background: var(--success-color); color: white; }
+        .status-closed { background: #6c757d; color: white; }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .blockchain-info {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .blockchain-verified {
+            color: var(--success-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-dark);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .back-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Report Status</h1>
+            <p>Rwanda Report System - Track Your Incident Report</p>
+        </div>
+
+        <div class="content">
+            {% if report %}
+            <div class="status-card">
+                <div class="reference-code">{{ report.reference_code }}</div>
+                <div class="status-badge status-{{ report.status }}">
+                    Status: {{ report.get_status_display }}
+                </div>
+
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value">{{ report.get_category_display }}</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <div class="detail-label">Submitted</div>
+                        <div class="detail-value">{{ report.created_at|date:"F d, Y \a\t H:i" }}</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <div class="detail-label">Last Updated</div>
+                        <div class="detail-value">{{ report.updated_at|date:"F d, Y \a\t H:i" }}</div>
+                    </div>
+                    
+                    {% if report.location_description %}
+                    <div class="detail-item">
+                        <div class="detail-label">Location</div>
+                        <div class="detail-value">{{ report.location_description }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="detail-item" style="grid-column: 1 / -1; margin-top: 15px;">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value" style="line-height: 1.6;">{{ report.description|linebreaks }}</div>
+                </div>
+
+                {% if report.is_hash_anchored %}
+                <div class="blockchain-info">
+                    <div class="blockchain-verified">
+                        ✅ Evidence Secured on Blockchain
+                    </div>
+                    {% if report.evidence_hash %}
+                    <div style="margin-top: 10px; font-size: 0.9rem;">
+                        <strong>Evidence Hash:</strong> 
+                        <code style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 4px; font-family: monospace;">
+                            {{ report.evidence_hash|truncatechars:30 }}
+                        </code>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="actions">
+                    <a href="/report/submit/" class="btn btn-primary">
+                        📝 Submit New Report
+                    </a>
+                    <a href="/" class="btn btn-outline">
+                        🏠 Back to Home
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="status-card" style="text-align: center; padding: 40px;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🔍</div>
+                <h2 style="color: var(--text-light); margin-bottom: 15px;">Report Not Found</h2>
+                <p style="color: var(--text-light); margin-bottom: 25px;">
+                    The report you're looking for doesn't exist or has been removed.
+                </p>
+                <div class="actions" style="justify-content: center;">
+                    <a href="/report/submit/" class="btn btn-primary">
+                        📝 Submit New Report
+                    </a>
+                    <a href="/" class="btn btn-outline">
+                        🏠 Back to Home
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="back-link">
+                <a href="/">← Return to Rwanda Report System Homepage</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add loading animation to buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (this.getAttribute('href')) {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '⏳ Loading...';
+                        this.style.opacity = '0.7';
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.style.opacity = '1';
+                        }, 1000);
+                    }
+                });
+            });
+
+            // Add copy functionality for reference code
+            const referenceCode = document.querySelector('.reference-code');
+            if (referenceCode) {
+                referenceCode.style.cursor = 'pointer';
+                referenceCode.title = 'Click to copy reference code';
+                
+                referenceCode.addEventListener('click', function() {
+                    const text = this.textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = '✅ Copied!';
+                        
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    });
+                });
+            }
+
+            console.log('Report status page loaded successfully');
+        });
+    </script>
+</body>
+</html>

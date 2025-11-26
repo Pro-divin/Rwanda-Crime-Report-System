@@ -1,0 +1,13 @@
+{
+  "preamble": {
+    "title": "foo/bar",
+    "description": "A next-level DeFi platform",
+    "version": "1.0.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.19+e525483"
+    }
+  },
+  "validators": []
+}

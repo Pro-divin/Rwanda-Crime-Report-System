@@ -1,0 +1,820 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - RRS Admin{% endblock %}
+
+{% block breadcrumb %}
+    <span>Dashboard</span>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Dashboard Overview</h1>
+        <div class="header-actions">
+            <button class="auto-refresh-btn" title="Toggle auto-refresh (updates every 15 seconds)" aria-label="Toggle auto-refresh">
+                🔄 Auto-refresh active
+            </button>
+            <time class="last-update" datetime="{% now 'c' %}">
+                Last updated: {% now "DATETIME_FORMAT" %}
+            </time>
+            {% if unread_notifications > 0 %}
+            <a href="{% url 'notifications' %}" class="notification-badge" aria-label="{{ unread_notifications }} unread notifications">
+                <span class="notification-icon" aria-hidden="true">🔔</span>
+                <span class="notification-count">{{ unread_notifications }}</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <section class="stats-grid" aria-label="Report Statistics">
+        <article class="stat-card" tabindex="0">
+            <span class="stat-number" aria-describedby="stat-total">{{ total_reports }}</span>
+            <span class="stat-label" id="stat-total">Total Reports</span>
+        </article>
+        <article class="stat-card stat-card--new" tabindex="0">
+            <span class="stat-number" aria-describedby="stat-new">{{ new_reports }}</span>
+            <span class="stat-label" id="stat-new">New Reports</span>
+        </article>
+        <article class="stat-card stat-card--actioned" tabindex="0">
+            <span class="stat-number" aria-describedby="stat-actioned">{{ actioned_reports }}</span>
+            <span class="stat-label" id="stat-actioned">Actioned Reports</span>
+        </article>
+        <article class="stat-card stat-card--rate" tabindex="0">
+            <span class="stat-number" aria-describedby="stat-rate">
+                {% if total_reports > 0 %}
+                    {% widthratio actioned_reports total_reports 100 %}%
+                {% else %}
+                    0%
+                {% endif %}
+            </span>
+            <span class="stat-label" id="stat-rate">Action Rate</span>
+        </article>
+    </section>
+
+    <div class="dashboard-grid">
+        <!-- Recent Reports -->
+        <section class="card" aria-labelledby="recent-reports-heading">
+            <header class="card-header">
+                <h2 id="recent-reports-heading">Recent Reports</h2>
+                <a href="{% url 'reports_list' %}" class="card-link">
+                    View All <span aria-hidden="true">→</span>
+                </a>
+            </header>
+            <div class="card-body">
+                {% if recent_reports %}
+                <div class="table-wrapper">
+                    <table class="table" role="grid">
+                        <thead>
+                            <tr>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in recent_reports %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'report_detail' report.id %}" class="report-link">
+                                        <strong>{{ report.reference_code }}</strong>
+                                        {% if report.is_anonymous %}
+                                        <small class="anonymous-tag">
+                                            <span aria-hidden="true">👤</span> Anonymous
+                                        </small>
+                                        {% endif %}
+                                    </a>
+                                </td>
+                                <td>{{ report.get_category_display }}</td>
+                                <td>
+                                    <span class="badge badge--{{ report.status }}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <time datetime="{{ report.created_at|date:'c' }}">
+                                        {{ report.created_at|date:"M d, Y" }}
+                                    </time>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-state__icon" aria-hidden="true">📝</span>
+                    <p class="empty-state__title">No reports yet</p>
+                    <p class="empty-state__text">Reports will appear here when citizens submit them.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Quick Actions & Category Distribution -->
+        <section class="card" aria-labelledby="quick-actions-heading">
+            <header class="card-header">
+                <h2 id="quick-actions-heading">Quick Actions</h2>
+            </header>
+            <div class="card-body">
+                <nav class="quick-actions" aria-label="Quick actions">
+                    <a href="{% url 'reports_list' %}" class="btn btn--primary">
+                        <span aria-hidden="true">📋</span> View All Reports
+                    </a>
+                    <a href="{% url 'map_view' %}" class="btn btn--outline">
+                        <span aria-hidden="true">🗺️</span> View Map
+                    </a>
+                    <a href="/admin/reports/report/add/" class="btn btn--outline">
+                        <span aria-hidden="true">➕</span> Add Manual Report
+                    </a>
+                    <a href="{% url 'analytics' %}" class="btn btn--outline">
+                        <span aria-hidden="true">📊</span> View Analytics
+                    </a>
+                </nav>
+
+                <!-- Category Distribution -->
+                <section class="category-section" aria-labelledby="category-heading">
+                    <h3 id="category-heading">Reports by Category</h3>
+                    {% if total_reports > 0 %}
+                    <div class="chart-container" role="img" aria-label="Bar chart showing report distribution by category">
+                        <div id="categoryChart" class="bar-chart"></div>
+                        <div id="chartLegend" class="chart-legend sr-only"></div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No data available yet</p>
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </section>
+    </div>
+
+    <!-- Priority Alerts -->
+    {% if new_reports > 0 %}
+    <aside class="alert alert--warning" role="alert" aria-live="polite">
+        <span class="alert__icon" aria-hidden="true">⚠️</span>
+        <div class="alert__content">
+            <h3 class="alert__title">
+                {{ new_reports }} New Report{{ new_reports|pluralize }} Need{{ new_reports|pluralize:"s," }} Attention
+            </h3>
+            <p class="alert__text">
+                There {{ new_reports|pluralize:"is,are" }} {{ new_reports }} new report{{ new_reports|pluralize }} waiting for review.
+            </p>
+        </div>
+        <a href="{% url 'reports_list' %}?status=new" class="btn btn--warning">
+            Review Now
+        </a>
+    </aside>
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --color-primary: #0088ce;
+        --color-primary-dark: #006da3;
+        --color-success: #28a745;
+        --color-warning: #ffc107;
+        --color-danger: #dc3545;
+        --color-info: #17a2b8;
+        --color-muted: #6c757d;
+        --color-border: #dee2e6;
+        --color-bg-light: #f8f9fa;
+        --color-text: #212529;
+        --color-text-muted: #6c757d;
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --transition: 0.2s ease;
+    }
+
+    /* Screen reader only utility */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    /* Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .last-update {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+    }
+
+    .notification-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: var(--color-danger);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        text-decoration: none;
+        transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .notification-badge:hover,
+    .notification-badge:focus {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-md);
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem 1.25rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        text-align: center;
+        border-left: 4px solid var(--color-primary);
+        transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .stat-card:hover,
+    .stat-card:focus {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stat-card--new { border-left-color: var(--color-info); }
+    .stat-card--actioned { border-left-color: var(--color-success); }
+    .stat-card--rate { border-left-color: var(--color-warning); }
+
+    .stat-number {
+        display: block;
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--color-primary);
+        line-height: 1.2;
+    }
+
+    .stat-card--new .stat-number { color: var(--color-info); }
+    .stat-card--actioned .stat-number { color: var(--color-success); }
+    .stat-card--rate .stat-number { color: var(--color-warning); }
+
+    .stat-label {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 860px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Cards */
+    .card {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .card-header h2,
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .card-link {
+        font-size: 0.875rem;
+        color: var(--color-primary);
+        text-decoration: none;
+        transition: color var(--transition);
+    }
+
+    .card-link:hover,
+    .card-link:focus {
+        color: var(--color-primary-dark);
+        text-decoration: underline;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    /* Table */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .table th {
+        background: var(--color-bg-light);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        color: var(--color-text-muted);
+    }
+
+    .table tbody tr {
+        transition: background var(--transition);
+    }
+
+    .table tbody tr:hover {
+        background: var(--color-bg-light);
+    }
+
+    .report-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .report-link strong {
+        color: var(--color-primary);
+        transition: color var(--transition);
+    }
+
+    .report-link:hover strong,
+    .report-link:focus strong {
+        color: var(--color-primary-dark);
+        text-decoration: underline;
+    }
+
+    .anonymous-tag {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Badges */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .badge--new { background: var(--color-primary); color: white; }
+    .badge--in_review { background: var(--color-warning); color: #212529; }
+    .badge--forwarded { background: var(--color-info); color: white; }
+    .badge--actioned { background: var(--color-success); color: white; }
+    .badge--closed { background: var(--color-muted); color: white; }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--color-text-muted);
+    }
+
+    .empty-state--small {
+        padding: 1.5rem 1rem;
+        background: var(--color-bg-light);
+        border-radius: var(--radius-md);
+    }
+
+    .empty-state__icon {
+        display: block;
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state__title {
+        font-weight: 600;
+        margin: 0 0 0.5rem;
+        color: var(--color-text);
+    }
+
+    .empty-state__text {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all var(--transition);
+    }
+
+    .btn:focus {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    .btn--primary {
+        background: var(--color-primary);
+        color: white;
+    }
+
+    .btn--primary:hover {
+        background: var(--color-primary-dark);
+        transform: translateY(-1px);
+    }
+
+    .btn--outline {
+        background: transparent;
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+    }
+
+    .btn--outline:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        background: rgba(0, 136, 206, 0.05);
+    }
+
+    .btn--warning {
+        background: var(--color-warning);
+        color: #212529;
+    }
+
+    .btn--warning:hover {
+        background: #e0a800;
+        transform: translateY(-1px);
+    }
+
+    /* Category Section */
+    .category-section {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .category-section h3 {
+        font-size: 1rem;
+        margin: 0 0 1rem;
+    }
+
+    .chart-container {
+        background: var(--color-bg-light);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+    }
+
+    .bar-chart {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 0.75rem;
+        min-height: 180px;
+    }
+
+    .bar-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        cursor: default;
+        transition: transform var(--transition);
+    }
+
+    .bar-item:hover {
+        transform: translateY(-4px);
+    }
+
+    .bar-item__bar {
+        width: 2.5rem;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        position: relative;
+        min-height: 4px;
+    }
+
+    .bar-item__value {
+        position: absolute;
+        top: -1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--color-text);
+    }
+
+    .bar-item__label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--color-text);
+        text-align: center;
+        max-width: 3rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bar-item__percent {
+        font-size: 0.6rem;
+        color: var(--color-text-muted);
+    }
+
+    /* Alert */
+    .alert {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        margin-top: 1.5rem;
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .alert--warning {
+        border-left: 4px solid var(--color-warning);
+    }
+
+    .alert__icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .alert__content {
+        flex: 1;
+    }
+
+    .alert__title {
+        margin: 0;
+        font-size: 1rem;
+        color: #856404;
+    }
+
+    .alert__text {
+        margin: 0.25rem 0 0;
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+    }
+
+    @media (max-width: 600px) {
+        .alert {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .alert .btn {
+            width: 100%;
+        }
+    }
+
+    /* Reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+
+    const COLORS = ['#0088ce', '#00a896', '#e63946', '#ff9e00', '#6a4c93', '#8ac926', '#1982c4', '#ff595e'];
+
+    function initCategoryChart() {
+        {% if total_reports > 0 %}
+        const categoryData = {{ categories|safe }};
+        const totalReports = {{ total_reports }};
+        const chartContainer = document.getElementById('categoryChart');
+        const legendContainer = document.getElementById('chartLegend');
+        
+        if (!chartContainer || !categoryData) return;
+
+        const entries = Object.entries(categoryData);
+        const maxValue = Math.max(...Object.values(categoryData), 1);
+        
+        // Build accessible legend
+        const legendItems = [];
+
+        entries.forEach(([category, count], index) => {
+            const barHeight = Math.max((count / maxValue) * 140, 4);
+            const percentage = Math.round((count / totalReports) * 100);
+            const color = COLORS[index % COLORS.length];
+            const abbrev = category.split(' ').map(w => w.charAt(0).toUpperCase()).join('');
+            
+            const barItem = document.createElement('div');
+            barItem.className = 'bar-item';
+            barItem.setAttribute('role', 'listitem');
+            barItem.setAttribute('aria-label', `${category}: ${count} reports, ${percentage}%`);
+            barItem.setAttribute('title', category);
+            
+            barItem.innerHTML = `
+                <div class="bar-item__bar" style="height: ${barHeight}px; background: ${color};">
+                    <span class="bar-item__value">${count}</span>
+                </div>
+                <span class="bar-item__label">${abbrev}</span>
+                <span class="bar-item__percent">${percentage}%</span>
+            `;
+            
+            chartContainer.appendChild(barItem);
+            legendItems.push(`${category}: ${count} (${percentage}%)`);
+        });
+
+        // Populate screen reader legend
+        if (legendContainer) {
+            legendContainer.textContent = 'Category breakdown: ' + legendItems.join(', ');
+        }
+        {% endif %}
+    }
+
+    function init() {
+        initCategoryChart();
+        initAutoRefresh();
+    }
+
+    // ========== AUTO-REFRESH FUNCTIONALITY ==========
+    function initAutoRefresh() {
+        const REFRESH_INTERVAL = 15000; // 15 seconds
+        const MAX_RETRIES = 3;
+        let retryCount = 0;
+        let isRefreshing = false;
+
+        const refreshBtn = document.querySelector('.auto-refresh-btn');
+        const lastUpdateDisplay = document.querySelector('.last-update');
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.classList.toggle('disabled');
+                if (this.classList.contains('disabled')) {
+                    this.textContent = '⏸ Auto-refresh paused';
+                    clearInterval(window.dashboardRefreshInterval);
+                } else {
+                    this.textContent = '🔄 Auto-refresh active';
+                    startAutoRefresh();
+                }
+            });
+        }
+
+        function startAutoRefresh() {
+            window.dashboardRefreshInterval = setInterval(function() {
+                if (!isRefreshing) {
+                    refreshDashboard();
+                }
+            }, REFRESH_INTERVAL);
+        }
+
+        function refreshDashboard() {
+            isRefreshing = true;
+            const currentUrl = window.location.pathname + window.location.search;
+
+            fetch(currentUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 200) {
+                    return response.text();
+                }
+                throw new Error('Failed to refresh');
+            })
+            .then(html => {
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                
+                // Update all stat cards
+                const oldCards = document.querySelectorAll('.stat-card');
+                const newCards = newDoc.querySelectorAll('.stat-card');
+                oldCards.forEach((card, index) => {
+                    if (newCards[index]) {
+                        const oldValue = card.querySelector('.stat-number').textContent;
+                        const newValue = newCards[index].querySelector('.stat-number').textContent;
+                        
+                        if (oldValue !== newValue) {
+                            card.classList.add('stat-card--updated');
+                            setTimeout(() => card.classList.remove('stat-card--updated'), 500);
+                        }
+                        
+                        card.querySelector('.stat-number').textContent = newValue;
+                    }
+                });
+
+                // Update recent reports list
+                const oldReportsList = document.querySelector('.reports-list');
+                const newReportsList = newDoc.querySelector('.reports-list');
+                if (oldReportsList && newReportsList) {
+                    oldReportsList.innerHTML = newReportsList.innerHTML;
+                }
+
+                // Update category chart data
+                const oldChartData = document.querySelector('[data-chart-data]');
+                const newChartData = newDoc.querySelector('[data-chart-data]');
+                if (oldChartData && newChartData && oldChartData.textContent !== newChartData.textContent) {
+                    oldChartData.textContent = newChartData.textContent;
+                    initCategoryChart();
+                }
+
+                // Update last modified time
+                if (lastUpdateDisplay) {
+                    lastUpdateDisplay.textContent = 'Last updated: ' + new Date().toLocaleString();
+                }
+
+                retryCount = 0;
+            })
+            .catch(error => {
+                console.warn('Dashboard refresh failed:', error);
+                retryCount++;
+            })
+            .finally(() => {
+                isRefreshing = false;
+            });
+        }
+
+        // Start auto-refresh on page load
+        startAutoRefresh();
+    }
+
+    function init() {
+        initCategoryChart();
+        initAutoRefresh();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+{% endblock %}

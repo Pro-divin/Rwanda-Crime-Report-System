@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}All Reports - RRS Admin{% endblock %}
+
+{% block breadcrumb %}
+    <span>Reports</span>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">All Reports</h1>
+        <div class="header-actions">
+            <a href="{% url 'map_view' %}" class="btn btn-outline">
+                <i class="fas fa-map"></i> Map View
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+        <div class="card-body">
+            <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        {% for status in status_choices %}
+                        <option value="{{ status.0 }}" {% if request.GET.status == status.0 %}selected{% endif %}>
+                            {{ status.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Category</label>
+                    <select name="category" class="form-control">
+                        <option value="">All Categories</option>
+                        {% for category in category_choices %}
+                        <option value="{{ category.0 }}" {% if request.GET.category == category.0 %}selected{% endif %}>
+                            {{ category.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Date From</label>
+                    <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="form-control">
+                </div>
+                <div>
+                    <label>Date To</label>
+                    <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="form-control">
+                </div>
+                <div style="display: flex; align-items: end;">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{% url 'reports_list' %}" class="btn btn-outline" style="margin-left: 10px;">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Reports ({{ reports.count }})</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Blockchain</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>
+                                <strong>{{ report.reference_code }}</strong>
+                                {% if report.is_anonymous %}
+                                <br><small class="text-muted">Anonymous</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ report.get_category_display }}</td>
+                            <td>
+                                <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ report.description|truncatewords:10 }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ report.status }}">{{ report.get_status_display }}</span>
+                            </td>
+                            <td>
+                                {% if report.latitude and report.longitude %}
+                                <i class="fas fa-map-marker-alt text-success"></i>
+                                {% else %}
+                                <span class="text-muted">No GPS</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ report.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if report.is_hash_anchored %}
+                                <i class="fas fa-link text-success" title="Anchored on Blockchain"></i>
+                                {% else %}
+                                <i class="fas fa-unlink text-muted" title="Not Anchored"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 5px;">
+                                    <a href="{% url 'report_detail' report.id %}" class="btn btn-outline btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if not report.is_hash_anchored %}
+                                    <button class="btn btn-warning btn-sm" onclick="anchorReport('{{ report.id }}')" title="Anchor on Blockchain">
+                                        <i class="fas fa-link"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align: center;">No reports found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function anchorReport(reportId) {
+    if (confirm('Anchor this report on the blockchain? This will secure the evidence hash.')) {
+        fetch(`/api/blockchain/anchor/${reportId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Report anchored successfully! Transaction: ' + data.transaction_hash);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error anchoring report: ' + error);
+        });
+    }
+}
+</script>
+
+<style>
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+.text-muted { color: #6c757d; }
+.text-success { color: #28a745; }
+</style>
+{% endblock %}

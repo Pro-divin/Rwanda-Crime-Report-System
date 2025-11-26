@@ -1,0 +1,43 @@
+# [Optional - if 'members' is present]
+#
+# Project's name, as {organisation}/{repository}
+name = "foo/bar"
+ 
+# [Optional - if 'members' is present]
+#
+# Project's version, we recommend semantic versioning for libraries. However,
+# any UTF-8 string is accepted.
+version = "1.0.0"
+ 
+# [Optional]
+#
+# A license name. We recommend Apache-2.0 or MPL-2.0 for open source projects.
+licence = "Apache-2.0"
+ 
+# [Optional]
+#
+# An informative albeit short description of the project.
+description = "A next-level DeFi platform"
+ 
+# [Optional]
+#
+# A list of folders to look for Aiken projects. See Workspaces below.
+members = ["."]
+ 
+# [Optional]
+#
+# Structured information on a project to show in generated documentation.
+[repository]
+platform = "github"   # Platform type, only `github` for now.
+user = "aiken-lang"   # Username or organisation on that platform
+project = "stdlib"    # Repository or project on that platform
+ 
+# [Optional]
+#
+# A list of dependencies. Avoid editing by hand, use `aiken packages` to manage
+# them.
+[[dependencies]]
+source = "github"            # Platform type, only `github` for now.
+name = "aiken-lang/stdlib"   # The github project, in the form of {organisation}/{repository}.
+version = "main"    
+path = "lib/lib.ak"         # Version, as a git tag, branch name or git commit hash

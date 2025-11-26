@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ report.reference_code }} - RRS Admin{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{% url 'reports_list' %}">Reports</a> > <span>{{ report.reference_code }}</span>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Report: {{ report.reference_code }}</h1>
+        <div class="header-actions">
+            <a href="{% url 'reports_list' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="grid-2-col" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+        <!-- Report Details -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Report Details</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>Basic Information</h4>
+                        <table class="table-details">
+                            <tr>
+                                <td><strong>Reference Code:</strong></td>
+                                <td>{{ report.reference_code }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Category:</strong></td>
+                                <td>{{ report.get_category_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge badge-{{ report.status }}">{{ report.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Priority:</strong></td>
+                                <td>
+                                    {% for i in "1234" %}
+                                        {% if forloop.counter <= report.priority %}
+                                            <i class="fas fa-exclamation-circle text-danger"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Submitted:</strong></td>
+                                <td>{{ report.created_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div>
+                        <h4>Location Information</h4>
+                        <table class="table-details">
+                            {% if report.latitude and report.longitude %}
+                            <tr>
+                                <td><strong>Coordinates:</strong></td>
+                                <td>{{ report.latitude }}, {{ report.longitude }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if report.location_description %}
+                            <tr>
+                                <td><strong>Location:</strong></td>
+                                <td>{{ report.location_description }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>Anonymous:</strong></td>
+                                <td>{{ report.is_anonymous|yesno:"Yes,No" }}</td>
+                            </tr>
+                        </table>
+
+                        {% if report.latitude and report.longitude %}
+                        <div id="miniMap" style="height: 150px; margin-top: 15px; border-radius: 4px;"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4>Description</h4>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
+                        {{ report.description|linebreaks }}
+                    </div>
+                </div>
+
+                <!-- Media Section -->
+                {% if report.media_file or report.ipfs_cid %}
+                <div style="margin-top: 20px;">
+                    <h4>Evidence Media</h4>
+                    {% if report.media_file %}
+                    <div>
+                        {% if report.media_file.url|lower|slice:'-4:' == '.mp4' or report.media_file.url|lower|slice:'-5:' == '.webm' %}
+                        <video controls style="max-width: 100%; max-height: 300px;">
+                            <source src="{{ report.media_file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        {% else %}
+                        <img src="{{ report.media_file.url }}" alt="Evidence" style="max-width: 100%; max-height: 300px; border-radius: 4px;">
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if report.ipfs_cid %}
+                    <div style="margin-top: 10px;">
+                        <strong>IPFS CID:</strong> 
+                        <code>{{ report.ipfs_cid }}</code>
+                        <button onclick="copyToClipboard('{{ report.ipfs_cid }}')" class="btn btn-outline btn-sm">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions & Blockchain -->
+        <div>
+            <!-- Status Update -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Update Status</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'admin:reports_report_change' report.id %}">
+                        {% csrf_token %}
+                        <div style="margin-bottom: 15px;">
+                            <label>New Status:</label>
+                            <select name="status" class="form-control">
+                                {% for status in status_choices %}
+                                <option value="{{ status.0 }}" {% if report.status == status.0 %}selected{% endif %}>
+                                    {{ status.1 }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label>Internal Notes:</label>
+                            <textarea name="notes" rows="3" class="form-control" placeholder="Add internal notes..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Blockchain Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Blockchain Verification</h3>
+                </div>
+                <div class="card-body">
+                    {% if report.is_hash_anchored %}
+                    <div style="color: var(--success); margin-bottom: 15px;">
+                        <i class="fas fa-check-circle"></i> Evidence Secured on Blockchain
+                    </div>
+                    <table class="table-details">
+                        <tr>
+                            <td><strong>Evidence Hash:</strong></td>
+                            <td>
+                                <code style="font-size: 0.8rem;">{{ report.evidence_hash|default:"N/A" }}</code>
+                                <button onclick="copyToClipboard('{{ report.evidence_hash }}')" class="btn btn-outline btn-sm">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Transaction:</strong></td>
+                            <td>
+                                <code style="font-size: 0.8rem;">{{ report.transaction_hash|default:"N/A" }}</code>
+                                {% if report.transaction_hash %}
+                                <button onclick="copyToClipboard('{{ report.transaction_hash }}')" class="btn btn-outline btn-sm">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>JSON CID:</strong></td>
+                            <td>
+                                <code style="font-size: 0.8rem;">{{ report.evidence_json_cid|default:"N/A" }}</code>
+                                {% if report.evidence_json_cid %}
+                                <button onclick="copyToClipboard('{{ report.evidence_json_cid }}')" class="btn btn-outline btn-sm">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                    <button onclick="verifyReport('{{ report.id }}')" class="btn btn-outline" style="margin-top: 15px; width: 100%;">
+                        <i class="fas fa-shield-alt"></i> Verify on Blockchain
+                    </button>
+                    {% else %}
+                    <div style="color: var(--warning); margin-bottom: 15px;">
+                        <i class="fas fa-exclamation-triangle"></i> Not Anchored on Blockchain
+                    </div>
+                    <button onclick="anchorReport('{{ report.id }}')" class="btn btn-warning" style="width: 100%;">
+                        <i class="fas fa-link"></i> Anchor on Blockchain
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Reporter Information -->
+            {% if not report.is_anonymous %}
+            <div class="card">
+                <div class="card-header">
+                    <h3>Reporter Information</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table-details">
+                        {% if report.reporter_name %}
+                        <tr>
+                            <td><strong>Name:</strong></td>
+                            <td>{{ report.reporter_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if report.reporter_phone %}
+                        <tr>
+                            <td><strong>Phone:</strong></td>
+                            <td>{{ report.reporter_phone }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if report.reporter_email %}
+                        <tr>
+                            <td><strong>Email:</strong></td>
+                            <td>{{ report.reporter_email }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status History -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Status History</h3>
+        </div>
+        <div class="card-body">
+            {% if updates %}
+            <div class="timeline">
+                {% for update in updates %}
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <strong>{{ update.user.username }}</strong>
+                            <span class="timeline-date">{{ update.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <div class="status-change">
+                            <span class="badge badge-{{ update.old_status }}">{{ update.get_old_status_display }}</span>
+                            <i class="fas fa-arrow-right"></i>
+                            <span class="badge badge-{{ update.new_status }}">{{ update.get_new_status_display }}</span>
+                        </div>
+                        {% if update.notes %}
+                        <div class="timeline-notes">
+                            {{ update.notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No status updates yet.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Copied to clipboard!');
+    });
+}
+
+function verifyReport(reportId) {
+    fetch(`/api/blockchain/verify/${reportId}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.verified) {
+            alert('✅ Report verified on blockchain! Hash matches.');
+        } else {
+            alert('❌ Verification failed! Evidence may have been tampered with.');
+        }
+    })
+    .catch(error => {
+        alert('Error verifying report: ' + error);
+    });
+}
+
+function anchorReport(reportId) {
+    if (confirm('Anchor this report on the blockchain? This will secure the evidence hash.')) {
+        fetch(`/api/blockchain/anchor/${reportId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Report anchored successfully! Transaction: ' + data.transaction_hash);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error anchoring report: ' + error);
+        });
+    }
+}
+
+// Initialize mini map
+{% if report.latitude and report.longitude %}
+var miniMap = L.map('miniMap').setView([{{ report.latitude }}, {{ report.longitude }}], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(miniMap);
+L.marker([{{ report.latitude }}, {{ report.longitude }}]).addTo(miniMap)
+    .bindPopup('Report Location');
+{% endif %}
+</script>
+
+<style>
+.table-details {
+    width: 100%;
+}
+.table-details td {
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.timeline {
+    border-left: 2px solid #e0e0e0;
+    margin-left: 20px;
+    padding-left: 20px;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+.timeline-marker {
+    position: absolute;
+    left: -31px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+.timeline-date {
+    color: #666;
+    font-size: 0.9rem;
+}
+.status-change {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+.timeline-notes {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+</style>
+{% endblock %}
