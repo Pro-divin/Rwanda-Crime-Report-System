@@ -15,7 +15,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'testserver',
     '*.onrender.com',
-    'rwanda-crime-report-system-9.onrender.com',
+    'rwanda-crime-report-system-10.onrender.com',
 ]
 
 # Application definition
