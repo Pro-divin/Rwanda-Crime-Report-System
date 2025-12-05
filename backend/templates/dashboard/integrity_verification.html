@@ -1,0 +1,503 @@
+{% extends 'base.html' %}
+{% load explorers %}
+
+{% block title %}Verify Integrity - RRS Admin{% endblock %}
+
+{% block breadcrumb %}
+    <span>Verify Integrity</span>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">🔐 Integrity Verification Intelligence</h1>
+        <p style="margin: 10px 0; color: #666;">Advanced verification system to detect tampering and compare current hashes with blockchain anchors</p>
+    </div>
+
+    <!-- Hash Decryption/Verification Tool -->
+    <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 20px;">
+        <div class="card-header" style="border: none;">
+            <h3 style="color: white; margin-top: 0;">🔍 Hash Decryption & Verification Tool</h3>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.9;">Paste a blockchain hash to decrypt and verify the information stored within it</p>
+        </div>
+        <div class="card-body" style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="color: white; font-weight: bold; display: block; margin-bottom: 8px;">
+                        <i class="fas fa-key"></i> Enter Blockchain Hash to Decrypt:
+                    </label>
+                    <textarea id="hashInput" placeholder="Paste blockchain hash here (SHA256 format)..." 
+                        style="width: 100%; padding: 12px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.3); font-family: monospace; font-size: 0.85rem; min-height: 80px; background: rgba(0,0,0,0.2); color: white; resize: vertical;"></textarea>
+                </div>
+            </div>
+            <button onclick="decryptHash()" class="btn" style="background: white; color: #667eea; font-weight: bold; padding: 12px 30px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.3s;">
+                <i class="fas fa-unlock"></i> Decrypt & Verify Hash
+            </button>
+        </div>
+    </div>
+
+    <!-- Hash Decryption Results -->
+    <div id="hashResultsContainer" style="display: none; margin-bottom: 20px;"></div>
+
+    <!-- Filters -->
+    <div class="card">
+        <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    {% for status in status_choices %}
+                    <option value="{{ status.0 }}" {% if request.GET.status == status.0 %}selected{% endif %}>
+                        {{ status.1 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Category</label>
+                <select name="category" class="form-control">
+                    <option value="">All Categories</option>
+                    {% for category in category_choices %}
+                    <option value="{{ category.0 }}" {% if request.GET.category == category.0 %}selected{% endif %}>
+                        {{ category.1 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Date From</label>
+                <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="form-control">
+            </div>
+            <div>
+                <label>Date To</label>
+                <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="form-control">
+            </div>
+            <div style="display: flex; align-items: end;">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{% url 'verify_integrity' %}" class="btn btn-outline" style="margin-left: 10px;">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Integrity Verification Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Anchored Reports ({{ reports.count }})</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                            <th>Submitted</th>
+                            <th>Transaction Hash</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>
+                                <strong>{{ report.reference_code }}</strong>
+                                {% if report.is_anonymous %}
+                                <br><small style="color: #666;">Anonymous</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ report.get_category_display }}</td>
+                            <td>
+                                <span class="badge badge-{{ report.status }}">{{ report.get_status_display }}</span>
+                            </td>
+                            <td>
+                                {% if report.latitude and report.longitude %}
+                                <i class="fas fa-map-marker-alt text-success"></i> {{ report.location_description|truncatewords:3 }}
+                                {% else %}
+                                <span style="color:#888">No GPS</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ report.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if report.transaction_hash %}
+                                <code style="font-size: 0.75rem;">{{ report.transaction_hash|truncatechars:15 }}</code>
+                                {% else %}
+                                <span style="color:#888">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 5px;">
+                                    <a href="{% url 'report_detail' report.id %}" class="btn btn-outline btn-sm">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <button class="btn btn-success btn-sm" onclick="verifyIntegrity('{{ report.reference_code }}')">
+                                        <i class="fas fa-shield-alt"></i> Verify
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #999; padding: 30px;">
+                                No anchored reports found. Anchor reports first to verify their integrity.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Results Modal -->
+    <div id="verificationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+        <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <button onclick="closeVerificationModal()" style="float: right; background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            <div id="verificationResults"></div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function verifyIntegrity(reportId) {
+    const modal = document.getElementById('verificationModal');
+    const resultsDiv = document.getElementById('verificationResults');
+    
+    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Performing integrity verification...</div>';
+    modal.style.display = 'block';
+    
+    fetch(`/api/blockchain/integrity/verify/${reportId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            resultsDiv.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; color: #856404;">
+                    <h4>⚠️ ${data.error}</h4>
+                    <p>${data.message || ''}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const integrity = data.integrity;
+        const blockchain = data.blockchain;
+        const checks = data.checks;
+        const summary = data.summary;
+        
+        let checksHtml = '';
+        Object.keys(checks).forEach(key => {
+            const check = checks[key];
+            const statusColor = check.passed ? '#28a745' : '#dc3545';
+            checksHtml += `
+                <div style="padding: 12px; margin-bottom: 10px; background: ${check.passed ? '#d4edda' : '#f8d7da'}; border-left: 4px solid ${statusColor}; border-radius: 4px;">
+                    <strong style="color: ${statusColor};">${check.name}</strong><br>
+                    <small>${check.description}</small><br>
+                    <div style="margin-top: 5px; color: ${statusColor}; font-weight: bold;">${check.status}</div>
+                </div>
+            `;
+        });
+        
+        const allPassed = summary.all_checks_passed;
+        const overallColor = allPassed ? '#28a745' : '#dc3545';
+        
+        resultsDiv.innerHTML = `
+            <div style="background: linear-gradient(135deg, ${overallColor}22 0%, ${overallColor}44 100%); padding: 20px; border-radius: 8px; border: 2px solid ${overallColor};">
+                <!-- Overall Status -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h3 style="color: ${overallColor}; margin: 0;">
+                        ${allPassed ? '✅ INTEGRITY VERIFIED' : '⚠️ INTEGRITY WARNING'}
+                    </h3>
+                    <p style="color: ${overallColor}; margin: 10px 0; font-weight: bold; font-size: 1.1rem;">
+                        ${summary.recommendation}
+                    </p>
+                </div>
+                
+                <!-- Hash Comparison -->
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                    <h4 style="margin-top: 0;">🔍 Hash Comparison</h4>
+                    <table style="width: 100%; font-size: 0.9rem;">
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; width: 150px; font-weight: bold;">Status</td>
+                            <td style="padding: 10px; color: ${integrity.match ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                                ${integrity.status}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Current Hash</td>
+                            <td style="padding: 10px; font-family: monospace; word-break: break-all; background: #f8f9fa; font-size: 0.8rem;">
+                                <code>${integrity.current_hash}</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Blockchain Hash</td>
+                            <td style="padding: 10px; font-family: monospace; word-break: break-all; background: #f8f9fa; font-size: 0.8rem;">
+                                <code>${integrity.blockchain_hash}</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Match</td>
+                            <td style="padding: 10px; color: ${integrity.match ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                                ${integrity.match ? '✓ YES - No Tampering' : '✗ NO - Modified'}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Verification Checks -->
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                    <h4 style="margin-top: 0;">🛡️ Verification Checks</h4>
+                    ${checksHtml}
+                </div>
+                
+                <!-- Blockchain Proof -->
+                <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                    <h4 style="margin-top: 0;">⛓️ Blockchain Proof</h4>
+                    <table style="width: 100%; font-size: 0.9rem;">
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; width: 150px; font-weight: bold;">Network</td>
+                            <td style="padding: 10px;">${blockchain.network}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Transaction Hash</td>
+                            <td style="padding: 10px; font-family: monospace; word-break: break-all; font-size: 0.8rem;">
+                                <code>${blockchain.transaction_hash}</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Confirmations</td>
+                            <td style="padding: 10px; color: ${blockchain.confirmations > 0 ? '#28a745' : '#ffc107'}; font-weight: bold;">
+                                ${blockchain.confirmations || 'Pending'} blocks
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Status</td>
+                            <td style="padding: 10px; color: ${blockchain.confirmations > 0 ? '#28a745' : '#ffc107'}; font-weight: bold;">
+                                ${blockchain.status}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Anchored At</td>
+                            <td style="padding: 10px;">${new Date(blockchain.anchored_at).toLocaleString()}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Verification Metadata -->
+                <div style="background: white; padding: 15px; border-radius: 6px;">
+                    <h4 style="margin-top: 0;">📋 Verification Metadata</h4>
+                    <table style="width: 100%; font-size: 0.9rem;">
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; width: 150px; font-weight: bold;">Verified By</td>
+                            <td style="padding: 10px;">${summary.verified_by}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Verification Time</td>
+                            <td style="padding: 10px;">${new Date(summary.verification_timestamp).toLocaleString()}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        `;
+    })
+    .catch(error => {
+        console.error('Verification error:', error);
+        resultsDiv.innerHTML = `
+            <div style="padding: 20px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; color: #721c24;">
+                <h4>❌ Verification Failed</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+    });
+}
+
+function closeVerificationModal() {
+    document.getElementById('verificationModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.getElementById('verificationModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// Hash Decryption & Verification Function
+function decryptHash() {
+    const hashInput = document.getElementById('hashInput').value.trim();
+    const resultsContainer = document.getElementById('hashResultsContainer');
+    
+    if (!hashInput) {
+        resultsContainer.innerHTML = `
+            <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; color: #856404;">
+                <h4>⚠️ Please enter a hash</h4>
+                <p>Paste a blockchain hash to decrypt and verify</p>
+            </div>
+        `;
+        resultsContainer.style.display = 'block';
+        return;
+    }
+    
+    resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Decrypting hash...</div>';
+    resultsContainer.style.display = 'block';
+    
+    // Search for the hash in all anchored reports
+    fetch('/api/blockchain/integrity/verify/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'search_hash': hashInput
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.found) {
+            // Hash found in blockchain
+            const report = data.report;
+            const anchor = data.anchor;
+            
+            resultsContainer.innerHTML = `
+                <div style="background: linear-gradient(135deg, #28a74522 0%, #28a74444 100%); padding: 20px; border-radius: 8px; border: 2px solid #28a745;">
+                    <!-- Success Header -->
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h3 style="color: #28a745; margin: 0;">✅ HASH VERIFIED & DECRYPTED</h3>
+                        <p style="color: #28a745; margin: 10px 0; font-weight: bold;">Hash found in blockchain - Information extracted successfully</p>
+                    </div>
+                    
+                    <!-- Report Information -->
+                    <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <h4 style="margin-top: 0;">📋 Report Information</h4>
+                        <table style="width: 100%; font-size: 0.9rem;">
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; width: 150px; font-weight: bold;">Reference Code</td>
+                                <td style="padding: 10px;">${report.reference_code}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Category</td>
+                                <td style="padding: 10px;">${report.category}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Status</td>
+                                <td style="padding: 10px; color: #28a745; font-weight: bold;">${report.status}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Description</td>
+                                <td style="padding: 10px;">${report.description.substring(0, 100)}...</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Location</td>
+                                <td style="padding: 10px;">${report.location_description || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Anonymous</td>
+                                <td style="padding: 10px;">${report.is_anonymous ? 'Yes' : 'No'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Submitted</td>
+                                <td style="padding: 10px;">${new Date(report.created_at).toLocaleString()}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Blockchain Proof -->
+                    <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <h4 style="margin-top: 0;">⛓️ Blockchain Proof</h4>
+                        <table style="width: 100%; font-size: 0.9rem;">
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; width: 150px; font-weight: bold;">Transaction Hash</td>
+                                <td style="padding: 10px; font-family: monospace; word-break: break-all; font-size: 0.8rem;"><code>${anchor.transaction_hash}</code></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Evidence Hash</td>
+                                <td style="padding: 10px; font-family: monospace; word-break: break-all; font-size: 0.8rem;"><code>${anchor.evidence_hash}</code></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Network</td>
+                                <td style="padding: 10px;">${anchor.network}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Confirmations</td>
+                                <td style="padding: 10px; color: ${anchor.confirmations > 0 ? '#28a745' : '#ffc107'}; font-weight: bold;">
+                                    ${anchor.confirmations || 'Pending'} blocks
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; background: #f8f9fa; font-weight: bold;">Status</td>
+                                <td style="padding: 10px; color: #28a745; font-weight: bold;">${anchor.status}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Action -->
+                    <div style="text-align: center;">
+                        <button onclick="document.getElementById('hashInput').value = ''; document.getElementById('hashResultsContainer').style.display = 'none';" 
+                            class="btn" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Hash not found
+            resultsContainer.innerHTML = `
+                <div style="background: linear-gradient(135deg, #dc354522 0%, #dc354544 100%); padding: 20px; border-radius: 8px; border: 2px solid #dc3545;">
+                    <div style="text-align: center;">
+                        <h3 style="color: #dc3545; margin: 0;">❌ HASH NOT FOUND</h3>
+                        <p style="color: #dc3545; margin: 10px 0; font-weight: bold;">This hash does not exist in the blockchain database</p>
+                        <p style="color: #666; margin: 10px 0;">The hash you entered could not be verified. Please check if:</p>
+                        <ul style="text-align: left; color: #666; max-width: 400px; margin: 15px auto;">
+                            <li>The hash is correctly copied</li>
+                            <li>The hash belongs to this system</li>
+                            <li>The report has been anchored to blockchain</li>
+                            <li>The hash hasn't been corrupted</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Decryption error:', error);
+        resultsContainer.innerHTML = `
+            <div style="padding: 20px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; color: #721c24;">
+                <h4>❌ Decryption Failed</h4>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <p style="font-size: 0.9rem; margin-top: 10px; color: #666;">
+                    <strong>Troubleshooting:</strong> Check browser console (F12) for details
+                </p>
+            </div>
+        `;
+    });
+}
+</script>
+
+<style>
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+.text-muted { color: #6c757d; }
+.text-success { color: #28a745; }
+</style>
+{% endblock %}

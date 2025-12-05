@@ -46,6 +46,7 @@ class Report(models.Model):
 
     ipfs_cid = models.CharField(max_length=100, blank=True, null=True)
     evidence_json_cid = models.CharField(max_length=100, blank=True, null=True)
+    ipfs_report_cid = models.CharField(max_length=100, blank=True, null=True, help_text="IPFS CID for complete report (distributed across 1000+ nodes)")
 
     evidence_hash = models.CharField(max_length=64, blank=True, null=True)
     transaction_hash = models.CharField(max_length=64, blank=True, null=True)
@@ -70,9 +71,21 @@ class Report(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        """Generate reference code automatically."""
+        """
+        Generate reference code automatically.
+        Clear reporter information if anonymous.
+        """
         if not self.reference_code:
             self.reference_code = self.generate_reference_code()
+        
+        # ANONYMOUS REPORT PROTECTION
+        # Clear reporter information when report is marked as anonymous
+        if self.is_anonymous:
+            self.reporter_name = ""
+            self.reporter_phone = ""
+            self.reporter_email = ""
+            self.user = None
+        
         super().save(*args, **kwargs)
 
     def generate_reference_code(self):

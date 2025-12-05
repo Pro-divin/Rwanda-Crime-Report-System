@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load explorers %}
 
 {% block title %}All Reports - RRS Admin{% endblock %}
 
@@ -18,8 +19,7 @@
 
     <!-- Filters -->
     <div class="card">
-        <div class="card-body">
-            <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                 <div>
                     <label>Status</label>
                     <select name="status" class="form-control">
@@ -75,6 +75,7 @@
                             <th>Location</th>
                             <th>Date</th>
                             <th>Blockchain</th>
+                            <th>Conf.</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -106,9 +107,25 @@
                             <td>{{ report.created_at|date:"M d, Y H:i" }}</td>
                             <td>
                                 {% if report.is_hash_anchored %}
-                                <i class="fas fa-link text-success" title="Anchored on Blockchain"></i>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-link text-success" title="Anchored on Blockchain"></i>
+                                    {% if report.transaction_hash %}
+                                        <span class="text-muted" title="Transaction Hash">{{ report.transaction_hash|truncatechars:16 }}</span>
+                                    {% endif %}
+                                </div>
                                 {% else %}
                                 <i class="fas fa-unlink text-muted" title="Not Anchored"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if report.transaction_hash %}
+                                    {% if report.blockchainanchor and report.blockchainanchor.confirmations %}
+                                        <span class="badge badge-success" title="Confirmations">{{ report.blockchainanchor.confirmations }}</span>
+                                    {% else %}
+                                        <span class="badge badge-warning" title="Pending">0</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -117,7 +134,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     {% if not report.is_hash_anchored %}
-                                    <button class="btn btn-warning btn-sm" onclick="anchorReport('{{ report.id }}')" title="Anchor on Blockchain">
+                                    <button class="btn btn-warning btn-sm" onclick="anchorReport('{{ report.reference_code }}')" title="Anchor on Blockchain">
                                         <i class="fas fa-link"></i>
                                     </button>
                                     {% endif %}
@@ -147,17 +164,33 @@ function anchorReport(reportId) {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            // Handle non-JSON responses
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                if (response.status === 403) {
+                    throw new Error('Access denied: You need staff permissions to anchor reports.');
+                } else if (response.status === 404) {
+                    throw new Error('Report not found.');
+                } else if (response.status === 401) {
+                    throw new Error('Please log in first.');
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                alert('Report anchored successfully! Transaction: ' + data.transaction_hash);
+                alert('Report anchored successfully!\n\nTransaction: ' + data.transaction_hash + '\n\nEvidence Hash: ' + data.evidence_hash);
                 location.reload();
             } else {
-                alert('Error: ' + data.error);
+                alert('Error: ' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
-            alert('Error anchoring report: ' + error);
+            alert('Error anchoring report:\n' + error.message);
+            console.error('Anchoring error:', error);
         });
     }
 }

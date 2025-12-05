@@ -1,0 +1,43 @@
+/**
+ * Custom styles for Report admin
+ */
+
+/* Anonymous field highlighting */
+.field-is_anonymous input[type="checkbox"]:checked + label {
+    font-weight: bold;
+    color: #856404;
+}
+
+/* Reporter info fieldset when anonymous */
+.field-is_anonymous input[type="checkbox"]:checked ~ .form-row {
+    opacity: 0.5;
+}
+
+/* Add visual separator */
+.field-is_anonymous {
+    border-left: 4px solid transparent;
+    padding-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.field-is_anonymous input[type="checkbox"]:checked {
+    border-left-color: #ffc107;
+}
+
+/* Reporter fields styling */
+.field-reporter_name,
+.field-reporter_phone,
+.field-reporter_email,
+.field-user {
+    transition: opacity 0.3s ease, height 0.3s ease;
+}
+
+/* Anonymous badge in list view */
+.column-anonymous_badge span {
+    white-space: nowrap;
+}
+
+/* Reporter display styling */
+.column-reporter_display em {
+    font-style: italic;
+}

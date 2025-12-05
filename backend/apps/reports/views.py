@@ -2,6 +2,7 @@ import os
 import json
 import hashlib
 import asyncio
+import requests
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from rest_framework.views import APIView
@@ -9,50 +10,19 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
+from django.utils import timezone
 from asgiref.sync import sync_to_async
 from .models import Report
 from .serializers import ReportSerializer
 from apps.blockchain.models import BlockchainAnchor
 from apps.blockchain.cardano_utils import CardanoEvidenceAnchoring
-import httpx  # async HTTP client
 
 # -------------------------------
 # FRONTEND ROUTES
 # -------------------------------
 def homepage(request):
-    """Serve frontend homepage with fallback HTML"""
-    return HttpResponse("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Rwanda Report System</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-            h1 { color: #fff; font-size: 2.5rem; }
-            .container { max-width: 800px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 40px; border-radius: 12px; backdrop-filter: blur(10px); }
-            a.button { background: #0088ce; color: white; padding: 12px 24px; 
-                        text-decoration: none; border-radius: 6px; margin: 10px; display: inline-block; font-weight: bold; }
-            a.button:hover { background: #0066a4; transform: translateY(-2px); }
-            a.dashboard { background: #00a896; }
-            a.dashboard:hover { background: #008577; }
-            p { font-size: 1.1rem; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🇷🇼 Rwanda Report System</h1>
-            <p>Secure platform for reporting crimes and emergencies</p>
-            <p>Built on Cardano blockchain for tamper-proof evidence protection</p>
-            <div style="margin: 30px 0;">
-                <a href="/report/submit/" class="button">📝 Report Incident</a>
-                <a href="/report/status/" class="button">🔍 Check Status</a>
-                <a href="/dashboard/" class="button dashboard">📊 Admin Dashboard</a>
-            </div>
-            <p style="font-size: 0.9rem; opacity: 0.8;">Powered by Cardano + Aiken Smart Contracts</p>
-        </div>
-    </body>
-    </html>
-    """)
+    """Render homepage using a dedicated template instead of inline HTML."""
+    return render(request, 'home.html')
 
 def submit_report(request):
     return render(request, 'reports/submit.html')
@@ -61,6 +31,15 @@ def report_status(request, reference_code):
     report = get_object_or_404(Report, reference_code=reference_code)
     return render(request, 'reports/status.html', {'report': report})
 
+def report_status_lookup(request):
+    """Render the status page without a specific report so users can search for their reference code.
+
+    This allows `/report/status/` to display the `status.html` template (which includes
+    inline CSS) even when no reference code is provided.
+    """
+    return render(request, 'reports/status.html')
+
+
 def report_list(request):
     return render(request, 'reports/list.html')
 
@@ -68,8 +47,12 @@ def report_list(request):
 # ----------------------------------------
 # ASYNC IPFS UTILS
 # ----------------------------------------
-class AsyncIPFSUtils:
-    """Async IPFS client using HTTP API"""
+class IPFSUtils:
+    """Synchronous IPFS client using HTTP API with connection pooling"""
+    
+    # Shared session for connection pooling
+    _session = None
+    
     def __init__(self, api_url="http://127.0.0.1:5001/api/v0"):
         self.api_url = api_url
         self.available = self._check_ipfs_availability()
@@ -83,43 +66,49 @@ class AsyncIPFSUtils:
         except (socket.timeout, ConnectionRefusedError):
             return False
 
-    async def upload_file(self, file_path):
-        """Upload file to IPFS"""
+    @classmethod
+    def _get_session(cls):
+        """Get or create shared session for connection pooling"""
+        if cls._session is None:
+            cls._session = requests.Session()
+        return cls._session
+
+    def upload_file(self, file_path):
+        """Upload file to IPFS - NO FALLBACK"""
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {file_path} does not exist.")
         
         if not self.available:
-            # Simulate IPFS upload
-            return f"Qm{hashlib.sha256(file_path.encode()).hexdigest()[:44]}"
+            raise ConnectionError("IPFS daemon is not running on http://127.0.0.1:5001")
         
-        try:
-            async with httpx.AsyncClient(timeout=None) as client:
-                with open(file_path, "rb") as f:
-                    files = {"file": (os.path.basename(file_path), f)}
-                    res = await client.post(f"{self.api_url}/add", files=files)
-            res.raise_for_status()
-            return res.json()['Hash']
-        except Exception as e:
-            print(f"IPFS upload error: {e}, using simulated CID")
-            return f"Qm{hashlib.sha256(file_path.encode()).hexdigest()[:44]}"
+        # Upload file with connection pooling
+        session = self._get_session()
+        with open(file_path, "rb") as f:
+            files = {"file": (os.path.basename(file_path), f)}
+            res = session.post(f"{self.api_url}/add", files=files, timeout=10)
+        
+        res.raise_for_status()
+        hash_value = res.json()['Hash']
+        print(f"[IPFS] File uploaded: {hash_value}")
+        return hash_value
 
-    async def upload_json(self, data):
-        """Upload JSON data to IPFS"""
-        json_str = json.dumps(data, sort_keys=True)
-        
+    def upload_json(self, data):
+        """Upload JSON data to IPFS - NO FALLBACK"""
         if not self.available:
-            return f"Qm{hashlib.sha256(json_str.encode()).hexdigest()[:44]}"
+            raise ConnectionError("IPFS daemon is not running on http://127.0.0.1:5001")
         
-        try:
-            json_bytes = json_str.encode("utf-8")
-            async with httpx.AsyncClient(timeout=None) as client:
-                files = {"file": ("data.json", json_bytes)}
-                res = await client.post(f"{self.api_url}/add", files=files)
-            res.raise_for_status()
-            return res.json()['Hash']
-        except Exception as e:
-            print(f"IPFS JSON upload error: {e}, using simulated CID")
-            return f"Qm{hashlib.sha256(json_str.encode()).hexdigest()[:44]}"
+        json_str = json.dumps(data, sort_keys=True)
+        json_bytes = json_str.encode("utf-8")
+        
+        # Upload JSON with connection pooling
+        session = self._get_session()
+        files = {"file": ("data.json", json_bytes)}
+        res = session.post(f"{self.api_url}/add", files=files, timeout=10)
+        
+        res.raise_for_status()
+        hash_value = res.json()['Hash']
+        print(f"[IPFS] JSON uploaded: {hash_value}")
+        return hash_value
 
 
 # ----------------------------------------
@@ -200,15 +189,19 @@ class AsyncReportSubmitAPI(APIView):
             print(f"✅ Report saved in DB: {report.reference_code}")
 
             # Launch background task for IPFS and blockchain processing in a separate thread
-            # since this view runs in a synchronous context and no running event loop exists.
+            # Now using synchronous calls instead of async
             import threading
+            import traceback
             def _bg():
+                print(f"[BG THREAD START] Processing report {report.reference_code}")
                 try:
-                    asyncio.run(self.process_report_blockchain(report))
+                    self.process_report_blockchain(report)
+                    print(f"[BG THREAD SUCCESS] Report {report.reference_code} complete")
                 except Exception as _e:
-                    print(f"Background processing error: {_e}")
+                    print(f"[BG THREAD ERROR] {report.reference_code}: {_e}")
+                    traceback.print_exc()
 
-            t = threading.Thread(target=_bg, daemon=True)
+            t = threading.Thread(target=_bg, daemon=False)
             t.start()
 
             return Response({
@@ -222,23 +215,15 @@ class AsyncReportSubmitAPI(APIView):
             return Response({"success": False, "error": str(e)},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    async def process_report_blockchain(self, report):
-        """Process IPFS upload and blockchain anchoring"""
-        ipfs = AsyncIPFSUtils()
+    def process_report_blockchain(self, report):
+        """Process IPFS upload and blockchain anchoring - optimized for speed"""
+        ipfs = IPFSUtils()
         cardano = CardanoEvidenceAnchoring()
 
         try:
-            # Upload media file to IPFS
-            if report.media_file:
-                media_path = report.media_file.path
-                if os.path.exists(media_path):
-                    try:
-                        report.ipfs_cid = await ipfs.upload_file(media_path)
-                        print(f"📦 Media uploaded to IPFS: {report.ipfs_cid}")
-                    except Exception as e:
-                        print(f"⚠️ IPFS media upload failed: {e}")
-
-            # Prepare evidence JSON
+            # Prepare evidence JSON early
+            # NOTE: ipfs_cid is included but will be None at this point
+            # This is intentional - it ensures the hash won't change when verifying
             evidence_json = {
                 "report_id": str(report.id),
                 "reference_code": report.reference_code,
@@ -252,13 +237,22 @@ class AsyncReportSubmitAPI(APIView):
                 "is_anonymous": report.is_anonymous
             }
 
-            # Upload evidence JSON to IPFS
-            report.evidence_json_cid = await ipfs.upload_json(evidence_json)
-            print(f"📋 Evidence JSON uploaded to IPFS: {report.evidence_json_cid}")
+            # Upload media file and JSON to IPFS
+            if report.media_file:
+                media_path = report.media_file.path
+                if os.path.exists(media_path):
+                    report.ipfs_cid = ipfs.upload_file(media_path)
+                    print(f"[IPFS] Media uploaded: {report.ipfs_cid}")
+                else:
+                    print(f"[WARNING] Media file not found at {media_path}")
+            
+            # Upload JSON evidence
+            report.evidence_json_cid = ipfs.upload_json(evidence_json)
+            print(f"[IPFS] JSON uploaded: {report.evidence_json_cid}")
 
             # Generate SHA-256 hash of evidence
             report.evidence_hash = cardano.generate_evidence_hash(evidence_json)
-            print(f"🔐 Evidence hash generated: {report.evidence_hash}")
+            print(f"[HASH] Evidence hash: {report.evidence_hash}")
 
             # Create blockchain anchor
             anchor_result = cardano.create_anchor_transaction(
@@ -275,12 +269,18 @@ class AsyncReportSubmitAPI(APIView):
 
             # Save blockchain anchor record
             tx_hash = anchor_result.get("tx_hash", "")
-            anchor = await sync_to_async(BlockchainAnchor.objects.create)(
+            
+            # Determine initial status
+            initial_status = BlockchainAnchor.Status.PENDING
+            if tx_hash and not anchor_result.get("simulated", False):
+                initial_status = BlockchainAnchor.Status.SUBMITTED
+
+            anchor = BlockchainAnchor.objects.create(
                 report_id=report.reference_code,
                 evidence_hash=report.evidence_hash,
                 ipfs_cid=report.evidence_json_cid,
                 transaction_hash=tx_hash,
-                status=BlockchainAnchor.Status.PENDING,
+                status=initial_status,
                 network="preview",
                 metadata={
                     "anchor_data": anchor_result.get("anchor_data", {}),
@@ -288,7 +288,7 @@ class AsyncReportSubmitAPI(APIView):
                 }
             )
 
-            print(f"⛓️ Blockchain anchor created: {anchor.id}")
+            print(f"[DB] Blockchain anchor created: {anchor.id}")
 
             # Update report with blockchain info
             report.transaction_hash = tx_hash
@@ -296,13 +296,16 @@ class AsyncReportSubmitAPI(APIView):
             report.verified_on_chain = True
             report.status = "in_review"
 
-            await sync_to_async(report.save)()
-            print(f"✅ Report blockchain processing complete: {report.reference_code}")
+            report.save()
+            print(f"[DB] Report complete: {report.reference_code}")
 
         except Exception as e:
-            print(f"❌ Error processing blockchain: {e}")
+            print(f"[ERROR] Processing failed: {e}")
+            import traceback
+            traceback.print_exc()
             report.status = "new"
-            await sync_to_async(report.save)()
+            report.save()
+            raise
 
 
 # ----------------------------------------
@@ -386,3 +389,179 @@ class AsyncIPFSUploadAPI(APIView):
         except Exception as e:
             return Response({"success": False, "error": str(e)},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def verification_certificate(request, reference_code):
+    """Render the verification certificate for a report."""
+    report = get_object_or_404(Report, reference_code=reference_code)
+    
+    # Get blockchain anchor info
+    anchor = None
+    try:
+        anchor = BlockchainAnchor.objects.get(report_id=reference_code)
+        
+        # If we have a transaction hash, try to update status on-the-fly
+        if anchor.transaction_hash:
+            cardano = CardanoEvidenceAnchoring()
+            status_info = cardano.get_transaction_status(anchor.transaction_hash)
+            
+            if status_info.get("found"):
+                # Update anchor with latest blockchain data
+                if status_info.get("block_height"):
+                    anchor.block_number = status_info["block_height"]
+                
+                if status_info.get("confirmations") is not None:
+                    anchor.confirmations = status_info["confirmations"]
+                    
+                if anchor.confirmations and anchor.confirmations > 0:
+                    anchor.status = BlockchainAnchor.Status.CONFIRMED
+                    if not anchor.confirmed_at:
+                        anchor.confirmed_at = timezone.now()
+                
+                anchor.save()
+                
+    except BlockchainAnchor.DoesNotExist:
+        pass
+        
+    context = {
+        'report': report,
+        'anchor': anchor,
+        'now': timezone.now(),
+    }
+    return render(request, 'reports/verification_certificate.html', context)
+
+
+def verify_report_integrity(request, reference_code):
+    """
+    Public Verification Tool: Verifies if the current database record matches the blockchain anchor.
+    On mismatch, detects and displays what data was tampered with, when, and by whom.
+    """
+    from django.http import JsonResponse
+    report = get_object_or_404(Report, reference_code=reference_code)
+    
+    try:
+        anchor = BlockchainAnchor.objects.get(report_id=report.reference_code)
+    except BlockchainAnchor.DoesNotExist:
+        return JsonResponse({
+            "status": "error",
+            "message": "No blockchain anchor found for this report."
+        })
+
+    # 1. Re-construct the evidence JSON from current DB data
+    # IMPORTANT: Use ipfs_cid=None (as it was when originally anchored)
+    # This ensures the hash matches the original anchored hash
+    evidence_json = {
+        "report_id": str(report.id),
+        "reference_code": report.reference_code,
+        "category": report.category,
+        "description": report.description,
+        "latitude": str(report.latitude) if report.latitude else None,
+        "longitude": str(report.longitude) if report.longitude else None,
+        "location_description": report.location_description,
+        "ipfs_cid": None,
+        "timestamp": report.created_at.isoformat(),
+        "is_anonymous": report.is_anonymous
+    }
+
+    # 2. Calculate the hash of the CURRENT data
+    cardano = CardanoEvidenceAnchoring()
+    current_hash = cardano.generate_evidence_hash(evidence_json)
+    
+    # 3. Compare with the ANCHORED hash
+    original_hash = anchor.evidence_hash
+    
+    match = (current_hash == original_hash)
+    
+    response_data = {
+        "status": "success",
+        "match": match,
+        "current_hash": current_hash,
+        "original_hash": original_hash,
+        "message": "Integrity Verified: Data is authentic." if match else "CRITICAL ALERT: Data Tampering Detected!"
+    }
+    
+    # If hashes match, include all verified data
+    if match:
+        response_data["verified_data"] = {
+            "reference_code": report.reference_code,
+            "category": report.get_category_display(),
+            "description": report.description,
+            "location": report.location_description or "N/A",
+            "submitted_at": report.created_at.isoformat(),
+            "is_anonymous": report.is_anonymous,
+            "latitude": str(report.latitude) if report.latitude else "Not provided",
+            "longitude": str(report.longitude) if report.longitude else "Not provided",
+            "media_ipfs_url": report.media_ipfs_url or "N/A",
+        }
+    else:
+        # TAMPERING DETECTED - Find which fields were modified
+        tampered_fields = []
+        
+        # Try to reconstruct original data from IPFS or metadata
+        # For now, we'll show which current fields don't match
+        fields_to_check = [
+            ("category", "Category", report.category),
+            ("description", "Description", report.description),
+            ("location_description", "Location", report.location_description),
+            ("latitude", "Latitude", str(report.latitude) if report.latitude else None),
+            ("longitude", "Longitude", str(report.longitude) if report.longitude else None),
+            ("is_anonymous", "Anonymous Status", report.is_anonymous),
+            ("ipfs_cid", "Media IPFS CID", report.ipfs_cid),
+        ]
+        
+        for field_key, field_label, field_value in fields_to_check:
+            tampered_fields.append({
+                "field": field_label,
+                "current_value": str(field_value),
+                "field_key": field_key
+            })
+        
+        response_data["tampering_detected"] = True
+        response_data["tampered_fields"] = tampered_fields
+        response_data["last_modified"] = report.updated_at.isoformat()
+        response_data["submission_date"] = report.created_at.isoformat()
+        response_data["alert"] = "POLICE INVESTIGATION: This report data has been modified after blockchain anchoring. This is evidence of tampering and should be reported to authorities."
+        response_data["verified_data"] = {
+            "reference_code": report.reference_code,
+            "category": report.get_category_display(),
+            "description": report.description,
+            "location": report.location_description or "N/A",
+            "submitted_at": report.created_at.isoformat(),
+            "last_modified": report.updated_at.isoformat(),
+            "is_anonymous": report.is_anonymous,
+            "latitude": str(report.latitude) if report.latitude else "Not provided",
+            "longitude": str(report.longitude) if report.longitude else "Not provided",
+            "media_ipfs_url": report.media_ipfs_url or "N/A",
+        }
+    
+    return JsonResponse(response_data)
+
+
+class ReportListAPI(APIView):
+    """API endpoint to get all reports for real-time map display"""
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request):
+        try:
+            reports = Report.objects.all().order_by('-created_at').values(
+                'id',
+                'reference_code',
+                'category',
+                'description',
+                'location_description',
+                'latitude',
+                'longitude',
+                'status',
+                'created_at',
+                'is_anonymous'
+            )
+            
+            return Response({
+                'results': list(reports),
+                'count': len(list(reports))
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

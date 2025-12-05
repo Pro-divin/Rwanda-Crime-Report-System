@@ -118,25 +118,60 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+    // Parse data from Django context
+    const categoryData = {{ category_data|safe }};
+    const statusData = {{ status_distribution|safe }};
+    const timelineData = {{ timeline_data|safe }};
+    const responseData = {{ response_distribution|safe }};
+    
+    // Color palette
+    const colors = {
+        primary: '#0088ce',
+        success: '#28a745',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        info: '#17a2b8',
+        secondary: '#6c757d'
+    };
+    
     // Category Distribution Chart
     const categoryCtx = document.getElementById('categoryChart').getContext('2d');
     new Chart(categoryCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Theft', 'Kidnapping', 'Corruption', 'House Fire', 'Road Accident', 'Other'],
+            labels: Object.keys(categoryData),
             datasets: [{
-                data: [25, 15, 20, 10, 20, 10], // Sample data
+                data: Object.values(categoryData),
                 backgroundColor: [
-                    '#0088ce', '#00a896', '#e63946', '#ff9e00', '#6a4c93', '#8ac926'
-                ]
+                    '#0088ce', '#00a896', '#e63946', '#ff9e00', '#6a4c93', '#8ac926', '#ff6b6b', '#4ecdc4'
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 13 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) label += ': ';
+                            label += context.parsed || 0;
+                            label += ' reports';
+                            return label;
+                        }
+                    }
                 }
             }
         }
@@ -147,66 +182,152 @@
     new Chart(statusCtx, {
         type: 'pie',
         data: {
-            labels: ['New', 'In Review', 'Forwarded', 'Actioned', 'Closed'],
+            labels: Object.keys(statusData),
             datasets: [{
-                data: [15, 25, 20, 30, 10], // Sample data
+                data: Object.values(statusData),
                 backgroundColor: [
-                    '#0088ce', '#ffc107', '#17a2b8', '#28a745', '#6c757d'
-                ]
+                    '#0088ce', '#ffc107', '#17a2b8', '#28a745', '#6c757d', '#e63946'
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 13 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) label += ': ';
+                            label += context.parsed || 0;
+                            return label;
+                        }
+                    }
                 }
             }
         }
     });
 
-    // Timeline Chart
+    // Timeline Chart (Last 30 Days)
     const timelineCtx = document.getElementById('timelineChart').getContext('2d');
     new Chart(timelineCtx, {
         type: 'line',
         data: {
-            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+            labels: Object.keys(timelineData),
             datasets: [{
-                label: 'Reports per Day',
-                data: [12, 19, 8, 15, 12, 10, 14],
-                borderColor: '#0088ce',
+                label: 'Reports Submitted',
+                data: Object.values(timelineData),
+                borderColor: colors.primary,
                 backgroundColor: 'rgba(0, 136, 206, 0.1)',
+                borderWidth: 3,
                 tension: 0.4,
-                fill: true
+                fill: true,
+                pointBackgroundColor: colors.primary,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        font: { size: 13 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 10,
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 13 }
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false,
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Reports'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
                 }
             }
         }
     });
 
-    // Response Time Chart
+    // Response Time Distribution Chart
     const responseCtx = document.getElementById('responseTimeChart').getContext('2d');
     new Chart(responseCtx, {
         type: 'bar',
         data: {
-            labels: ['< 1h', '1-4h', '4-12h', '12-24h', '> 24h'],
+            labels: Object.keys(responseData),
             datasets: [{
                 label: 'Number of Reports',
-                data: [15, 25, 30, 20, 10],
-                backgroundColor: '#00a896'
+                data: Object.values(responseData),
+                backgroundColor: [
+                    colors.success,
+                    colors.info,
+                    colors.warning,
+                    colors.danger,
+                    '#8b0000'
+                ],
+                borderColor: '#fff',
+                borderWidth: 1,
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
+            indexAxis: 'x',
+            plugins: {
+                legend: {
+                    labels: {
+                        font: { size: 13 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' reports';
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false,
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
                 }
             }
         }

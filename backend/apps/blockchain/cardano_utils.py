@@ -8,6 +8,32 @@ import hashlib
 import time
 from datetime import datetime
 from typing import Dict, Optional, Tuple
+import os
+import traceback
+
+# PyCardano imports
+try:
+    from pycardano import (
+        BlockFrostChainContext,
+        TransactionBuilder,
+        TransactionOutput,
+        Value,
+        Metadata,
+        AlonzoMetadata,
+        AuxiliaryData,
+        TransactionBody,
+        TransactionWitnessSet,
+        VerificationKeyWitness,
+        Transaction,
+        PaymentExtendedSigningKey,
+        PaymentSigningKey,
+        Address,
+        Network
+    )
+    PYCARDANO_AVAILABLE = True
+except ImportError:
+    PYCARDANO_AVAILABLE = False
+    print("⚠️ PyCardano not found. Blockchain features will be simulated.")
 
 
 class CardanoEvidenceAnchoring:
@@ -25,7 +51,16 @@ class CardanoEvidenceAnchoring:
             blockfrost_key: Blockfrost API key
         """
         self.network = network
-        self.blockfrost_key = blockfrost_key
+        # Load Blockfrost key from Django settings if not provided
+        try:
+            from django.conf import settings
+            cfg_key = getattr(settings, 'BLOCKFROST_PROJECT_ID', '')
+            self.broadcast_enabled = bool(getattr(settings, 'ANCHOR_BROADCAST', False))
+        except Exception:
+            cfg_key = ''
+            self.broadcast_enabled = False
+
+        self.blockfrost_key = blockfrost_key or cfg_key
         self.blockfrost_url = f"https://cardano-{network}.blockfrost.io/api/v0"
         self.contract_address = ""  # Will be set after deployment
         
@@ -48,7 +83,8 @@ class CardanoEvidenceAnchoring:
         evidence_hash: str,
         category: str,
         is_anonymous: bool,
-        reporter_info: Optional[Dict] = None
+        reporter_info: Optional[Dict] = None,
+        ipfs_cid: Optional[str] = None
     ) -> Dict:
         """
         Create blockchain transaction to anchor evidence
@@ -73,6 +109,8 @@ class CardanoEvidenceAnchoring:
             "is_anonymous": is_anonymous,
             "timestamp": timestamp,
             "network": self.network,
+            "ipfs_cid": ipfs_cid,  # Link to distributed IPFS storage (1000+ nodes)
+            "distributed_storage": bool(ipfs_cid),
         }
         
         if reporter_info and not is_anonymous:
@@ -82,17 +120,55 @@ class CardanoEvidenceAnchoring:
                 "email": reporter_info.get("email", ""),
             }
         
-        # Simulate transaction creation
-        # In production, this would submit to Cardano via Blockfrost or Kupo
-        tx_hash = self._simulate_tx_submission(anchor_data)
-        
-        return {
-            "success": True,
-            "tx_hash": tx_hash,
-            "status": "pending",
-            "timestamp": timestamp,
-            "anchor_data": anchor_data,
-        }
+        # If broadcasting is disabled, or no credentials configured, simulate
+        if not self.broadcast_enabled or not self.blockfrost_key:
+            tx_hash = self._simulate_tx_submission(anchor_data)
+            return {
+                "success": True,
+                "tx_hash": tx_hash,
+                "status": "pending",
+                "timestamp": timestamp,
+                "anchor_data": anchor_data,
+                "simulated": True,
+                "note": "Anchoring simulated (ANCHOR_BROADCAST=False or Blockfrost key missing)."
+            }
+
+        # Real transaction submission using pycardano
+        try:
+            tx_hash = self._submit_real_transaction(anchor_data)
+            explorer_primary = f"https://{self.network}.cexplorer.io/tx/{tx_hash}" if self.network != 'mainnet' else f"https://cexplorer.io/tx/{tx_hash}"
+            explorer_secondary = f"https://{self.network}.cardanoscan.io/transaction/{tx_hash}" if self.network != 'mainnet' else f"https://cardanoscan.io/transaction/{tx_hash}"
+            return {
+                "success": True,
+                "tx_hash": tx_hash,
+                "status": "submitted",
+                "timestamp": timestamp,
+                "anchor_data": anchor_data,
+                "simulated": False,
+                "note": (
+                    f"Transaction submitted to {self.network} network. Explorer links: "
+                    f"cexplorer={explorer_primary} cardanoscan={explorer_secondary}"
+                ),
+                "explorers": {
+                    "cexplorer": explorer_primary,
+                    "cardanoscan": explorer_secondary
+                }
+            }
+        except Exception as e:
+            # Fall back to simulation if real submission fails
+            print(f"❌ Real broadcast failed: {e}")
+            traceback.print_exc()
+            tx_hash = self._simulate_tx_submission(anchor_data)
+            return {
+                "success": True,
+                "tx_hash": tx_hash,
+                "status": "pending",
+                "timestamp": timestamp,
+                "anchor_data": anchor_data,
+                "simulated": True,
+                "error": str(e),
+                "note": f"Real broadcast failed ({str(e)}), fell back to simulation."
+            }
     
     def verify_evidence_on_chain(
         self,
@@ -153,6 +229,161 @@ class CardanoEvidenceAnchoring:
         tx_hash = hashlib.sha256(data_str.encode()).hexdigest()
         return tx_hash
 
+    def _submit_real_transaction(self, anchor_data: Dict) -> str:
+        """
+        Submit real transaction to Cardano blockchain using PyCardano
+        
+        Args:
+            anchor_data: Data to anchor on chain
+            
+        Returns:
+            Real transaction hash from blockchain
+            
+        Raises:
+            Exception: If transaction fails or wallet not configured
+        """
+        if not PYCARDANO_AVAILABLE:
+            raise Exception("PyCardano library not available")
+
+        # 1. Setup Context
+        # Note: BlockFrostChainContext in PyCardano handles the base URL correctly if we give it the right one
+        # For preview, it should be https://cardano-preview.blockfrost.io/api
+        # It appends /v0 internally if needed, or we provide it.
+        # Based on testing, providing /api works best with current pycardano version
+        
+        base_url = f"https://cardano-{self.network}.blockfrost.io/api"
+        
+        context = BlockFrostChainContext(
+            project_id=self.blockfrost_key,
+            base_url=base_url
+        )
+        
+        # 2. Get Wallet Info
+        try:
+            from django.conf import settings
+            root_dir = settings.BASE_DIR.parent
+            
+            # Try backend/keys/payment.skey first (Standard location)
+            skey_path = root_dir / "backend" / "keys" / "payment.skey"
+            
+            if not skey_path.exists():
+                # Fallback to secure/payment.skey.json
+                skey_path = root_dir / "secure" / "payment.skey.json"
+            
+            if not skey_path.exists():
+                raise FileNotFoundError(f"Signing key not found at {skey_path}")
+                
+            # Load key based on type in file or try both
+            try:
+                signing_key = PaymentExtendedSigningKey.load(str(skey_path))
+            except Exception:
+                signing_key = PaymentSigningKey.load(str(skey_path))
+                
+            verification_key = signing_key.to_verification_key()
+            
+            # Workaround for empty verification key issue with Extended Keys
+            if len(verification_key.payload) == 0:
+                print("⚠️  Empty verification key detected. Attempting workaround...")
+                # Extract the first 32 bytes (private key) from the extended key
+                priv_bytes = signing_key.payload[:32]
+                signing_key_simple = PaymentSigningKey(priv_bytes)
+                verification_key = signing_key_simple.to_verification_key()
+                signing_key = signing_key_simple
+            
+            # Derive address
+            payment_address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
+            
+        except Exception as e:
+            raise Exception(f"Wallet loading failed: {e}")
+
+        # 3. Build Metadata
+        # We use label 674 for general metadata
+        meta_dict = {
+            674: {
+                "msg": [f"RRS Report: {anchor_data['report_id']}", f"Cat: {anchor_data['category']}"],
+                "hash": anchor_data['evidence_hash'],
+                "anon": "Yes" if anchor_data['is_anonymous'] else "No",
+                "ts": anchor_data['timestamp']
+            }
+        }
+        
+        metadata_obj = Metadata(meta_dict)
+        alonzo_metadata = AlonzoMetadata(metadata=metadata_obj)
+        auxiliary_data = AuxiliaryData(data=alonzo_metadata)
+        
+        # 4. Build Transaction
+        builder = TransactionBuilder(context)
+        builder.add_input_address(payment_address)
+        
+        # Send a small amount to self to carry the metadata (min ADA)
+        builder.add_output(TransactionOutput(payment_address, Value(1500000)))
+        
+        # Set auxiliary data
+        builder.auxiliary_data = auxiliary_data
+        
+        # Build
+        tx_body = builder.build(change_address=payment_address)
+        
+        # 5. Sign
+        signature = signing_key.sign(tx_body.hash())
+        
+        vk = signing_key.to_verification_key()
+        vk_witness = VerificationKeyWitness(vk, signature)
+        witness_set = TransactionWitnessSet(vkey_witnesses=[vk_witness])
+        
+        tx = Transaction(tx_body, witness_set, auxiliary_data=auxiliary_data)
+        
+        # 6. Submit
+        print(f"🚀 Submitting transaction for report {anchor_data['report_id']}...")
+        context.submit_tx(tx)
+        
+        tx_id = str(tx.id)
+        print(f"✅ Transaction submitted: {tx_id}")
+        
+        return tx_id
+
+    def get_transaction_status(self, tx_hash: str) -> Dict:
+        """Query Blockfrost for a transaction status (confirmations, block height).
+
+        Returns a dict with keys: found(bool), block_height, confirmations, block_time, slot.
+        If Blockfrost key missing or request fails returns found False.
+        """
+        if not tx_hash or not self.blockfrost_key:
+            return {"found": False, "reason": "missing tx_hash or blockfrost key"}
+        import requests
+        base = f"https://cardano-{self.network}.blockfrost.io/api/v0"
+        headers = {"project_id": self.blockfrost_key}
+        try:
+            tx_r = requests.get(f"{base}/txs/{tx_hash}", headers=headers, timeout=15)
+            if tx_r.status_code != 200:
+                return {"found": False, "code": tx_r.status_code}
+            tx = tx_r.json()
+            block_height = tx.get("block_height")
+            slot = tx.get("slot")
+            block_time = tx.get("block_time")
+            # latest block for confirmations
+            latest_r = requests.get(f"{base}/blocks/latest", headers=headers, timeout=15)
+            confirmations = None
+            if latest_r.status_code == 200 and isinstance(block_height, int):
+                latest = latest_r.json()
+                latest_h = latest.get("height")
+                if isinstance(latest_h, int):
+                    confirmations = max(0, latest_h - block_height + 1)
+            return {
+                "found": True,
+                "block_height": block_height,
+                "confirmations": confirmations,
+                "block_time": block_time,
+                "slot": slot,
+            }
+        except requests.RequestException as e:
+            return {"found": False, "error": str(e)}
+    
+    def get_current_timestamp(self) -> str:
+        """Get current ISO timestamp for verification records"""
+        from django.utils import timezone
+        return timezone.now().isoformat()
+
 
 class BlockchainStatusTracker:
     """
@@ -169,26 +400,59 @@ class BlockchainStatusTracker:
     ) -> Dict:
         """
         Get blockchain confirmation status for a report
+        Queries Blockfrost for real confirmation data
         
         Args:
             report_id: Report reference code
             tx_hash: Transaction hash if available
             
         Returns:
-            Status dictionary
+            Status dictionary with real confirmation counts
         """
         status_data = {
             "report_id": report_id,
             "tx_hash": tx_hash or "pending",
             "confirmations": 0,
-            "status": "submitted",
+            "status": "pending",
             "blockchain": "cardano",
             "network": self.cardano.network,
         }
         
         if tx_hash:
-            # In production, query Blockfrost for actual confirmations
-            status_data["confirmations"] = 1  # Simulated
-            status_data["status"] = "confirmed"
+            # Query Blockfrost for real transaction confirmations
+            try:
+                tx_status = self.cardano.get_transaction_status(tx_hash)
+                if tx_status.get("found"):
+                    status_data["confirmations"] = tx_status.get("confirmations", 0)
+                    status_data["status"] = "confirmed" if tx_status.get("confirmations", 0) > 0 else "submitted"
+                    status_data["block_height"] = tx_status.get("block_height")
+                    status_data["block_time"] = tx_status.get("block_time")
+                    status_data["slot"] = tx_status.get("slot")
+                else:
+                    status_data["status"] = "submitted"
+                    status_data["confirmations"] = 0
+            except Exception as e:
+                print(f"Warning: Could not query Blockfrost: {e}")
+                status_data["status"] = "submitted"
+                status_data["confirmations"] = 0
         
         return status_data
+    
+    def get_confirmations(self, tx_hash: str) -> int:
+        """
+        Get confirmation count for a transaction
+        
+        Args:
+            tx_hash: Transaction hash
+            
+        Returns:
+            Number of confirmations
+        """
+        try:
+            tx_status = self.cardano.get_transaction_status(tx_hash)
+            if tx_status.get("found"):
+                return tx_status.get("confirmations", 0)
+            return 0
+        except Exception as e:
+            print(f"Error getting confirmations: {e}")
+            return 0

@@ -434,6 +434,27 @@
     color: var(--color-primary);
 }
 
+/* Tooltip Styling */
+.report-tooltip {
+    background: white !important;
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-md) !important;
+    padding: 0 !important;
+    max-width: 280px;
+    z-index: 999 !important;
+}
+
+.report-tooltip .leaflet-tooltip-content {
+    padding: 0 !important;
+    font-size: 12px !important;
+    margin: 0 !important;
+}
+
+.report-tooltip::before {
+    border-top-color: var(--color-primary) !important;
+}
+
 /* Cluster Styling */
 .marker-cluster-small,
 .marker-cluster-medium,
@@ -767,14 +788,27 @@
     let isMeasuring = false;
     let measurePoints = [];
 
-    // Reports data from Django
-    const reports = {{ reports|safe }};
+    // Reports data from Django - initialize as empty, will fetch via API
+    let reports = [];
+    
+    // Try to get reports from Django template context
+    try {
+        const templateReports = {{ reports|safe }};
+        if (Array.isArray(templateReports)) {
+            reports = templateReports;
+        }
+    } catch (e) {
+        console.warn('Could not load reports from template, will fetch from API');
+        reports = [];
+    }
 
+    let isFirstLoad = true;  // Track if this is the initial load
+    
     // ========== INITIALIZATION ==========
     function init() {
         initMap();
         initLayers();
-        initMarkers();
+        loadReportsRealTime();
         initControls();
         initDrawing();
         initLegend();
@@ -785,11 +819,31 @@
         setTimeout(() => {
             document.getElementById('mapLoading').style.display = 'none';
         }, 1500);
+
+        // Refresh reports every 10 seconds for real-time updates (faster for new submissions)
+        setInterval(loadReportsRealTime, 10000);
+        
+        // Listen for page visibility to optimize updates
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Reduce update frequency when page is hidden
+                console.log('Map page hidden - reducing update frequency');
+            } else {
+                // Resume faster updates when page is visible
+                console.log('Map page visible - resuming updates');
+            }
+        });
     }
 
     function initMap() {
+        // Determine center from first report if available, otherwise use Kigali
+        let center = CONFIG.center;
+        if (reports.length > 0 && reports[0].latitude && reports[0].longitude) {
+            center = [parseFloat(reports[0].latitude), parseFloat(reports[0].longitude)];
+        }
+
         map = L.map('map', {
-            center: CONFIG.center,
+            center: center,
             zoom: CONFIG.defaultZoom,
             maxZoom: CONFIG.maxZoom,
             minZoom: CONFIG.minZoom,
@@ -802,6 +856,154 @@
 
         // Scale control
         L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
+    }
+
+    // ========== REAL-TIME DATA LOADING ==========
+    function loadReportsRealTime() {
+        // Fetch latest reports from API endpoint
+        const apiUrl = '/api/reports/list/';
+        
+        fetch(apiUrl)
+            .then(res => {
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                const newReports = data.results || data || [];
+                if (Array.isArray(newReports) && newReports.length > 0) {
+                    // Check for new reports submitted
+                    const previousCount = reports.length;
+                    reports = newReports;
+                    
+                    // If new reports were added, highlight them
+                    if (newReports.length > previousCount) {
+                        const newReportsAdded = newReports.slice(previousCount);
+                        newReportsAdded.forEach(report => {
+                            highlightNewReport(report);
+                        });
+                    }
+                    
+                    // Clear and reinitialize markers
+                    markersLayer.clearLayers();
+                    clusterLayer.clearLayers();
+                    initMarkers();
+                    updateStats();
+                }
+            })
+            .catch(err => {
+                console.error('Error loading reports:', err);
+                // Silently fail - use existing data
+            });
+    }
+
+    // Highlight newly submitted reports with animation
+    function highlightNewReport(report) {
+        try {
+            const lat = parseFloat(report.latitude);
+            const lng = parseFloat(report.longitude);
+            
+            if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                console.warn('Invalid coordinates for new report:', report.reference_code);
+                return;
+            }
+
+            // Create animated pulse marker for new reports
+            const pulseIcon = L.divIcon({
+                className: 'new-report-marker',
+                html: `
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        background: #ffc107;
+                        border: 4px solid white;
+                        border-radius: 50%;
+                        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 18px;
+                        animation: reportPulse 2s infinite;
+                    ">
+                        ✓
+                    </div>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                popupAnchor: [0, -20]
+            });
+
+            // Calculate time ago for newly submitted report
+            let timeAgo = '';
+            if (report.created_at) {
+                try {
+                    const date = new Date(report.created_at);
+                    const now = new Date();
+                    const diff = Math.floor((now - date) / 1000);
+                    if (diff < 60) {
+                        timeAgo = 'Just now';
+                    } else if (diff < 3600) {
+                        timeAgo = Math.floor(diff / 60) + ' min ago';
+                    }
+                } catch (e) {
+                    timeAgo = '';
+                }
+            }
+
+            // Create marker for new report
+            const newMarker = L.marker([lat, lng], { icon: pulseIcon })
+                .bindPopup(`
+                    <div class="popup-content">
+                        <div class="popup-header">
+                            <h4 class="popup-title" style="color: #ffc107;">🆕 New Report</h4>
+                            <span class="popup-badge" style="background: #ffc107; color: #333;">JUST SUBMITTED ${timeAgo ? '(' + timeAgo + ')' : ''}</span>
+                        </div>
+                        <div class="popup-body">
+                            <p><strong>Reference:</strong> ${report.reference_code || 'N/A'}</p>
+                            <p><strong>Category:</strong> ${report.category || 'N/A'}</p>
+                            <p><strong>Location:</strong> ${report.location_description || 'N/A'}</p>
+                            <p><strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                            <p><strong>Status:</strong> <span style="color: #ffc107;">⏳ Processing</span></p>
+                        </div>
+                        <div class="popup-actions">
+                            <a href="/dashboard/reports/${report.id}/" class="popup-btn popup-btn-primary">View Details</a>
+                        </div>
+                    </div>
+                `, { className: 'custom-popup', maxWidth: 320 })
+                .addTo(map);
+
+            // Automatically zoom to new report
+            map.flyTo([lat, lng], 17, { duration: 1.5 });
+
+            // Center on new report
+            newMarker.openPopup();
+
+            // Add CSS animation if not already added
+            if (!document.getElementById('reportPulseStyle')) {
+                const style = document.createElement('style');
+                style.id = 'reportPulseStyle';
+                style.textContent = `
+                    @keyframes reportPulse {
+                        0% {
+                            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+                            transform: scale(1);
+                        }
+                        50% {
+                            box-shadow: 0 0 0 15px rgba(255, 193, 7, 0);
+                            transform: scale(1.05);
+                        }
+                        100% {
+                            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+                            transform: scale(1);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            console.log('New report pinned on map:', report.reference_code, lat, lng);
+        } catch (e) {
+            console.error('Error highlighting new report:', e);
+        }
     }
 
     function initLayers() {
@@ -828,59 +1030,100 @@
         const counts = { new: 0, in_review: 0, forwarded: 0, actioned: 0, closed: 0 };
         const heatData = [];
 
+        if (!reports || !Array.isArray(reports)) {
+            console.warn('Reports data is invalid or empty');
+            return;
+        }
+
         reports.forEach(report => {
-            if (!report.latitude || !report.longitude) return;
+            try {
+                // Ensure coordinates are valid numbers
+                let lat = parseFloat(report.latitude);
+                let lng = parseFloat(report.longitude);
+                
+                if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                    console.warn('Invalid coordinates for report:', report.reference_code);
+                    return;
+                }
 
-            counts[report.status] = (counts[report.status] || 0) + 1;
+                // Count by status
+                const status = report.status || 'new';
+                counts[status] = (counts[status] || 0) + 1;
 
-            // Create custom icon
-            const icon = createCustomIcon(report.status);
-            
-            // Create marker
-            const marker = L.marker([report.latitude, report.longitude], { icon })
-                .bindPopup(createPopupContent(report), {
-                    className: 'custom-popup',
-                    maxWidth: 320
-                });
-            
-            marker.reportData = report;
-            markersLayer.addLayer(marker);
-            clusterLayer.addLayer(L.marker([report.latitude, report.longitude], { icon })
-                .bindPopup(createPopupContent(report), { className: 'custom-popup' }));
+                // Create custom icon
+                const icon = createCustomIcon(status);
+                
+                // Create marker with correct lat/lng order [latitude, longitude]
+                const marker = L.marker([lat, lng], { icon, title: `${report.reference_code}` })
+                    .bindPopup(createPopupContent(report), {
+                        className: 'custom-popup',
+                        maxWidth: 320
+                    })
+                    .bindTooltip(createTooltipContent(report), {
+                        permanent: false,
+                        direction: 'top',
+                        offset: [0, -10],
+                        className: 'report-tooltip'
+                    });
+                
+                marker.reportData = report;
+                marker._reportStatus = status;
+                markersLayer.addLayer(marker);
+                
+                // Add to cluster layer
+                const clusterMarker = L.marker([lat, lng], { icon })
+                    .bindPopup(createPopupContent(report), { className: 'custom-popup' })
+                    .bindTooltip(createTooltipContent(report), {
+                        permanent: false,
+                        direction: 'top',
+                        offset: [0, -10],
+                        className: 'report-tooltip'
+                    });
+                clusterLayer.addLayer(clusterMarker);
 
-            // Add to heatmap data
-            heatData.push([report.latitude, report.longitude, 0.8]);
-        });
-
-        // Initialize heatmap
-        heatLayer = L.heatLayer(heatData, {
-            radius: 25,
-            blur: 15,
-            maxZoom: 17,
-            gradient: {
-                0.2: '#0088ce',
-                0.4: '#00a896',
-                0.6: '#ffc107',
-                0.8: '#ff6b35',
-                1.0: '#dc3545'
+                // Add to heatmap data [lat, lng, intensity]
+                heatData.push([lat, lng, 0.8]);
+            } catch (e) {
+                console.error('Error processing report:', e, report);
             }
         });
 
+        // Initialize or update heatmap
+        if (heatLayer) {
+            try {
+                map.removeLayer(heatLayer);
+            } catch (e) {
+                console.warn('Error removing heatmap:', e);
+            }
+        }
+        
+        if (heatData.length > 0) {
+            heatLayer = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: {
+                    0.2: '#0088ce',
+                    0.4: '#00a896',
+                    0.6: '#ffc107',
+                    0.8: '#ff6b35',
+                    1.0: '#dc3545'
+                }
+            });
+        }
+
         // Update counts
-        Object.keys(counts).forEach(status => {
-            const el = document.getElementById('count' + status.charAt(0).toUpperCase() + status.slice(1).replace('_', ''));
-            if (el) el.textContent = counts[status];
-        });
+        document.getElementById('countNew').textContent = counts.new || 0;
+        document.getElementById('countInReview').textContent = counts.in_review || 0;
+        document.getElementById('countForwarded').textContent = counts.forwarded || 0;
+        document.getElementById('countActioned').textContent = counts.actioned || 0;
+        document.getElementById('countClosed').textContent = counts.closed || 0;
 
-        // Update specific count elements
-        document.getElementById('countNew').textContent = counts.new;
-        document.getElementById('countInReview').textContent = counts.in_review;
-        document.getElementById('countForwarded').textContent = counts.forwarded;
-        document.getElementById('countActioned').textContent = counts.actioned;
-        document.getElementById('countClosed').textContent = counts.closed;
-
-        // Fit bounds if markers exist
-        fitAllMarkers();
+        // Fit bounds if markers exist (only on initial load)
+        if (isFirstLoad && reports.length > 0) {
+            fitAllMarkers();
+            isFirstLoad = false;  // Mark that first load is complete
+        }
     }
 
     function createCustomIcon(status) {
@@ -913,25 +1156,93 @@
         });
     }
 
+    function createTooltipContent(report) {
+        const statusEmoji = {
+            'new': '🆕',
+            'in_review': '👁️',
+            'forwarded': '↗️',
+            'actioned': '✅',
+            'closed': '🔒'
+        };
+        
+        const emoji = statusEmoji[report.status] || '📍';
+        const statusLabel = (report.status || 'new').replace('_', ' ').toUpperCase();
+        
+        return `
+            <div style="padding: 8px; font-size: 12px; font-weight: 500;">
+                <div>${emoji} <strong>${report.reference_code}</strong></div>
+                <div style="color: #666; margin-top: 4px;">📍 ${report.location_description || 'Unknown Location'}</div>
+                <div style="color: #666;">📂 ${report.category || 'N/A'}</div>
+                <div style="color: #0088ce; margin-top: 4px;"><strong>${statusLabel}</strong></div>
+            </div>
+        `;
+    }
+
     function createPopupContent(report) {
         const statusColor = STATUS_COLORS[report.status] || '#0088ce';
-        const statusLabel = report.status.replace('_', ' ').toUpperCase();
+        const statusLabel = (report.status || 'new').replace('_', ' ').toUpperCase();
+        
+        // Parse coordinates as floats
+        const lat = parseFloat(report.latitude) || 0;
+        const lng = parseFloat(report.longitude) || 0;
+        
+        // Format date if available and calculate time ago
+        let dateStr = 'N/A';
+        let timeAgo = '';
+        if (report.created_at) {
+            try {
+                const date = new Date(report.created_at);
+                if (!isNaN(date.getTime())) {
+                    dateStr = date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Calculate time ago
+                    const now = new Date();
+                    const diff = Math.floor((now - date) / 1000); // seconds
+                    if (diff < 60) {
+                        timeAgo = 'Just now';
+                    } else if (diff < 3600) {
+                        timeAgo = Math.floor(diff / 60) + ' min ago';
+                    } else if (diff < 86400) {
+                        timeAgo = Math.floor(diff / 3600) + ' hours ago';
+                    } else {
+                        timeAgo = Math.floor(diff / 86400) + ' days ago';
+                    }
+                }
+            } catch (e) {
+                dateStr = report.created_at;
+            }
+        }
+        
+        const description = (report.description || 'N/A').substring(0, 100);
+        const hasMore = (report.description || '').length > 100;
+        
+        // Determine if report is recently submitted (within last 5 minutes)
+        const isRecent = timeAgo && (timeAgo.includes('Just now') || 
+                         (timeAgo.includes('min') && parseInt(timeAgo) <= 5));
         
         return `
             <div class="popup-content">
                 <div class="popup-header">
-                    <h4 class="popup-title">${report.reference_code}</h4>
+                    <h4 class="popup-title">${report.reference_code || 'Unknown'}</h4>
                     <span class="popup-badge" style="background: ${statusColor}">${statusLabel}</span>
                 </div>
                 <div class="popup-body">
-                    <p><strong>Category:</strong> ${report.category}</p>
-                    <p><strong>Location:</strong> ${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}</p>
-                    <p><strong>Date:</strong> ${report.created_at || 'N/A'}</p>
-                    <p><strong>Description:</strong> ${(report.description || '').substring(0, 100)}${report.description?.length > 100 ? '...' : ''}</p>
+                    <p><strong>Category:</strong> ${report.category || 'N/A'}</p>
+                    <p><strong>Location:</strong> ${report.location_description || 'N/A'}</p>
+                    <p><strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                    <p><strong>Submitted:</strong> ${timeAgo ? timeAgo + ' (' + dateStr + ')' : dateStr}</p>
+                    ${isRecent ? '<p style="color: #ffc107; font-weight: bold;">🆕 Recently Submitted</p>' : ''}
+                    <p><strong>Description:</strong> ${description}${hasMore ? '...' : ''}</p>
                 </div>
                 <div class="popup-actions">
                     <a href="/dashboard/reports/${report.id}/" class="popup-btn popup-btn-primary">View Details</a>
-                    <button class="popup-btn popup-btn-outline" onclick="zoomToReport(${report.latitude}, ${report.longitude})">Zoom Here</button>
+                    <button class="popup-btn popup-btn-outline" onclick="window.zoomToReport(${lat}, ${lng})">Zoom Here</button>
                 </div>
             </div>
         `;
@@ -981,42 +1292,70 @@
     }
 
     function switchLayer(layerName) {
-        // Remove current layer
-        Object.values(TILE_LAYERS).forEach(layer => {
-            if (map.hasLayer(layer)) map.removeLayer(layer);
-        });
-        
-        // Add new layer
-        TILE_LAYERS[layerName].addTo(map);
-        currentLayer = layerName;
+        try {
+            // Remove current layer
+            Object.entries(TILE_LAYERS).forEach(([name, layer]) => {
+                try {
+                    if (map.hasLayer(layer)) {
+                        map.removeLayer(layer);
+                    }
+                } catch (e) {
+                    console.warn(`Error removing layer ${name}:`, e);
+                }
+            });
+            
+            // Add new layer
+            if (TILE_LAYERS[layerName]) {
+                TILE_LAYERS[layerName].addTo(map);
+                currentLayer = layerName;
+            }
+        } catch (e) {
+            console.error('Error switching layer:', e);
+        }
     }
 
     function setDisplayMode(mode) {
-        // Update button states
-        document.getElementById('btnMarkers').classList.toggle('active', mode === 'markers');
-        document.getElementById('btnClusters').classList.toggle('active', mode === 'clusters');
-        document.getElementById('btnHeatmap').classList.toggle('active', mode === 'heatmap');
+        try {
+            // Update button states
+            document.getElementById('btnMarkers').classList.toggle('active', mode === 'markers');
+            document.getElementById('btnClusters').classList.toggle('active', mode === 'clusters');
+            document.getElementById('btnHeatmap').classList.toggle('active', mode === 'heatmap');
 
-        // Remove all display layers
-        map.removeLayer(markersLayer);
-        map.removeLayer(clusterLayer);
-        if (heatLayer) map.removeLayer(heatLayer);
+            // Remove all display layers
+            [markersLayer, clusterLayer].forEach(layer => {
+                try {
+                    if (layer && map.hasLayer(layer)) {
+                        map.removeLayer(layer);
+                    }
+                } catch (e) {}
+            });
+            
+            if (heatLayer) {
+                try {
+                    if (map.hasLayer(heatLayer)) {
+                        map.removeLayer(heatLayer);
+                    }
+                } catch (e) {}
+            }
 
-        // Add selected layer
-        switch(mode) {
-            case 'markers':
-                map.addLayer(markersLayer);
-                break;
-            case 'clusters':
-                map.addLayer(clusterLayer);
-                break;
-            case 'heatmap':
-                if (heatLayer) map.addLayer(heatLayer);
-                break;
+            // Add selected layer
+            switch(mode) {
+                case 'markers':
+                    if (markersLayer) map.addLayer(markersLayer);
+                    break;
+                case 'clusters':
+                    if (clusterLayer) map.addLayer(clusterLayer);
+                    break;
+                case 'heatmap':
+                    if (heatLayer) map.addLayer(heatLayer);
+                    break;
+            }
+
+            displayMode = mode;
+            updateStats();
+        } catch (e) {
+            console.error('Error setting display mode:', e);
         }
-
-        displayMode = mode;
-        updateStats();
     }
 
     // ========== GEOLOCATION ==========
@@ -1026,12 +1365,20 @@
         
         if (watchId) {
             // Stop tracking
-            navigator.geolocation.clearWatch(watchId);
+            try {
+                navigator.geolocation.clearWatch(watchId);
+            } catch (e) {
+                console.warn('Error clearing geolocation watch:', e);
+            }
             watchId = null;
             btn.classList.remove('active');
             panel.style.display = 'none';
-            if (userMarker) map.removeLayer(userMarker);
-            if (userCircle) map.removeLayer(userCircle);
+            if (userMarker) {
+                try { map.removeLayer(userMarker); } catch (e) {}
+            }
+            if (userCircle) {
+                try { map.removeLayer(userCircle); } catch (e) {}
+            }
             return;
         }
 
@@ -1045,70 +1392,81 @@
 
         watchId = navigator.geolocation.watchPosition(
             position => {
-                const { latitude, longitude, accuracy } = position.coords;
-                
-                // Update GPS panel
-                document.getElementById('gpsLat').textContent = latitude.toFixed(6);
-                document.getElementById('gpsLng').textContent = longitude.toFixed(6);
-                document.getElementById('gpsAccuracy').textContent = accuracy.toFixed(1);
+                try {
+                    const { latitude, longitude, accuracy } = position.coords;
+                    
+                    // Update GPS panel
+                    document.getElementById('gpsLat').textContent = latitude.toFixed(6);
+                    document.getElementById('gpsLng').textContent = longitude.toFixed(6);
+                    document.getElementById('gpsAccuracy').textContent = accuracy.toFixed(1);
 
-                // Update or create user marker
-                if (userMarker) {
-                    userMarker.setLatLng([latitude, longitude]);
-                    userCircle.setLatLng([latitude, longitude]);
-                    userCircle.setRadius(accuracy);
-                } else {
-                    // Create pulsing user marker
-                    userMarker = L.marker([latitude, longitude], {
-                        icon: L.divIcon({
-                            className: 'user-location-marker',
-                            html: `
-                                <div style="
-                                    width: 20px;
-                                    height: 20px;
-                                    background: #4285f4;
-                                    border: 3px solid white;
-                                    border-radius: 50%;
-                                    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.4);
-                                    animation: userPulse 2s infinite;
-                                "></div>
-                            `,
-                            iconSize: [20, 20],
-                            iconAnchor: [10, 10]
-                        })
-                    }).addTo(map);
+                    // Update or create user marker
+                    if (userMarker) {
+                        userMarker.setLatLng([latitude, longitude]);
+                        userCircle.setLatLng([latitude, longitude]);
+                        userCircle.setRadius(accuracy);
+                    } else {
+                        // Create pulsing user marker
+                        userMarker = L.marker([latitude, longitude], {
+                            icon: L.divIcon({
+                                className: 'user-location-marker',
+                                html: `
+                                    <div style="
+                                        width: 20px;
+                                        height: 20px;
+                                        background: #4285f4;
+                                        border: 3px solid white;
+                                        border-radius: 50%;
+                                        box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.4);
+                                        animation: userPulse 2s infinite;
+                                    "></div>
+                                `,
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        }).addTo(map);
 
-                    // Accuracy circle
-                    userCircle = L.circle([latitude, longitude], {
-                        radius: accuracy,
-                        color: '#4285f4',
-                        fillColor: '#4285f4',
-                        fillOpacity: 0.15,
-                        weight: 2
-                    }).addTo(map);
+                        // Accuracy circle
+                        userCircle = L.circle([latitude, longitude], {
+                            radius: accuracy,
+                            color: '#4285f4',
+                            fillColor: '#4285f4',
+                            fillOpacity: 0.15,
+                            weight: 2
+                        }).addTo(map);
 
-                    // Add CSS for pulse animation
-                    if (!document.getElementById('userPulseStyle')) {
-                        const style = document.createElement('style');
-                        style.id = 'userPulseStyle';
-                        style.textContent = `
-                            @keyframes userPulse {
-                                0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.4); }
-                                70% { box-shadow: 0 0 0 15px rgba(66, 133, 244, 0); }
-                                100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
-                            }
-                        `;
-                        document.head.appendChild(style);
+                        // Add CSS for pulse animation
+                        if (!document.getElementById('userPulseStyle')) {
+                            const style = document.createElement('style');
+                            style.id = 'userPulseStyle';
+                            style.textContent = `
+                                @keyframes userPulse {
+                                    0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.4); }
+                                    70% { box-shadow: 0 0 0 15px rgba(66, 133, 244, 0); }
+                                    100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+
+                        map.setView([latitude, longitude], 17);
                     }
-
-                    map.setView([latitude, longitude], 17);
+                } catch (e) {
+                    console.error('Error processing geolocation:', e);
                 }
             },
             error => {
                 console.error('Geolocation error:', error);
-                alert('Unable to get your location: ' + error.message);
                 btn.classList.remove('active');
                 panel.style.display = 'none';
+                
+                // Display user-friendly error messages
+                let msg = 'Unable to get your location';
+                if (error.code === 1) msg = 'Location permission denied';
+                else if (error.code === 2) msg = 'Position unavailable';
+                else if (error.code === 3) msg = 'Location request timed out';
+                
+                alert(msg);
             },
             {
                 enableHighAccuracy: true,
@@ -1185,8 +1543,11 @@
             markersLayer.eachLayer(marker => {
                 if (marker.reportData) {
                     const latlng = marker.getLatLng();
-                    if (layer.getBounds ? layer.getBounds().contains(latlng) : 
-                        latlng.distanceTo(layer.getLatLng()) <= layer.getRadius()) {
+                    const isInArea = layer.getBounds ? 
+                        layer.getBounds().contains(latlng) : 
+                        (latlng.distanceTo(layer.getLatLng()) <= layer.getRadius());
+                    
+                    if (isInArea) {
                         reportsInArea++;
                     }
                 }
@@ -1248,24 +1609,38 @@
     function initSearch() {
         const searchInput = document.getElementById('searchLocation');
         let searchTimeout;
+        let searchMarker = null;
 
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
             const query = this.value.trim();
             
-            if (query.length < 3) return;
+            if (query.length < 3) {
+                if (searchMarker) {
+                    try { map.removeLayer(searchMarker); } catch (e) {}
+                    searchMarker = null;
+                }
+                return;
+            }
 
             searchTimeout = setTimeout(() => {
                 // Search using Nominatim (free geocoding)
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error(`Search error: ${res.status}`);
+                        return res.json();
+                    })
                     .then(data => {
-                        if (data.length > 0) {
+                        if (data && data.length > 0) {
                             const { lat, lon, display_name } = data[0];
-                            map.setView([lat, lon], 16);
                             
-                            // Add temporary marker
-                            const searchMarker = L.marker([lat, lon], {
+                            // Remove old search marker
+                            if (searchMarker) {
+                                try { map.removeLayer(searchMarker); } catch (e) {}
+                            }
+                            
+                            // Add new search marker
+                            searchMarker = L.marker([parseFloat(lat), parseFloat(lon)], {
                                 icon: L.divIcon({
                                     className: 'search-marker',
                                     html: '<div style="width:40px;height:40px;background:#e63946;border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;">📍</div>',
@@ -1275,33 +1650,68 @@
                             }).addTo(map)
                             .bindPopup(`<strong>Search Result</strong><br>${display_name}`).openPopup();
 
-                            setTimeout(() => map.removeLayer(searchMarker), 10000);
+                            map.setView([parseFloat(lat), parseFloat(lon)], 16);
+
+                            // Remove marker after 10 seconds
+                            setTimeout(() => {
+                                if (searchMarker) {
+                                    try { map.removeLayer(searchMarker); } catch (e) {}
+                                    searchMarker = null;
+                                }
+                            }, 10000);
                         }
                     })
-                    .catch(err => console.error('Search error:', err));
+                    .catch(err => {
+                        console.error('Search error:', err);
+                        // Silently fail - user can try again
+                    });
             }, 500);
         });
     }
 
     // ========== UTILITIES ==========
     function fitAllMarkers() {
-        const validReports = reports.filter(r => r.latitude && r.longitude);
-        if (validReports.length > 0) {
-            const bounds = L.latLngBounds(validReports.map(r => [r.latitude, r.longitude]));
-            map.fitBounds(bounds.pad(0.1));
+        try {
+            const validReports = reports.filter(r => {
+                const lat = parseFloat(r.latitude);
+                const lng = parseFloat(r.longitude);
+                return lat && lng && !isNaN(lat) && !isNaN(lng);
+            });
+            
+            if (validReports.length === 0) {
+                map.setView(CONFIG.center, CONFIG.defaultZoom);
+                return;
+            }
+
+            if (validReports.length === 1) {
+                map.setView([parseFloat(validReports[0].latitude), parseFloat(validReports[0].longitude)], 16);
+            } else {
+                const bounds = L.latLngBounds(validReports.map(r => [parseFloat(r.latitude), parseFloat(r.longitude)]));
+                map.fitBounds(bounds.pad(0.1));
+            }
+        } catch (e) {
+            console.error('Error fitting bounds:', e);
+            map.setView(CONFIG.center, CONFIG.defaultZoom);
         }
     }
 
     function updateStats() {
-        let visible = 0;
-        markersLayer.eachLayer(marker => {
-            if (marker.reportData && marker.options.opacity !== 0) visible++;
-        });
-        document.getElementById('visibleMarkers').textContent = visible;
-        document.getElementById('drawnZones').textContent = drawnItems.getLayers().length;
-        
-        // Estimate hotspots (clusters of 3+ in close proximity)
-        document.getElementById('hotspotCount').textContent = Math.floor(reports.length / 5);
+        try {
+            let visible = 0;
+            markersLayer.eachLayer(marker => {
+                if (marker.reportData && marker.options.opacity !== 0) visible++;
+            });
+            
+            const visibleElement = document.getElementById('visibleMarkers');
+            const drawnElement = document.getElementById('drawnZones');
+            const hotspotElement = document.getElementById('hotspotCount');
+            
+            if (visibleElement) visibleElement.textContent = visible;
+            if (drawnElement) drawnElement.textContent = drawnItems ? drawnItems.getLayers().length : 0;
+            if (hotspotElement) hotspotElement.textContent = Math.max(0, Math.floor((reports.length || 0) / 5));
+        } catch (e) {
+            console.warn('Error updating stats:', e);
+        }
     }
 
     function takeScreenshot() {
@@ -1322,9 +1732,13 @@
         }
     }
 
-    // Global function for popup
+    // Global function for popup - must be accessible from popup content
     window.zoomToReport = function(lat, lng) {
-        map.setView([lat, lng], 18);
+        try {
+            map.setView([lat, lng], 18);
+        } catch (e) {
+            console.error('Error zooming to report:', e);
+        }
     };
 
     // ========== INITIALIZE ==========

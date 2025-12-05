@@ -43,6 +43,12 @@
             background: var(--dark);
             color: white;
             transition: all 0.3s;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 999;
         }
 
         .sidebar-header {
@@ -82,6 +88,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            margin-left: 250px;
+            width: calc(100% - 250px);
         }
 
         /* Top Bar - Glass Effect */
@@ -335,6 +343,11 @@
                     class="menu-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
                     <i class="fas fa-chart-bar"></i>
                     Analytics
+                </a>
+                <a href="{% url 'verify_integrity' %}"
+                    class="menu-item {% if request.resolver_match.url_name == 'verify_integrity' %}active{% endif %}">
+                    <i class="fas fa-shield-alt"></i>
+                    Verify Integrity
                 </a>
                 <a href="/admin/" class="menu-item">
                     <i class="fas fa-cog"></i>

@@ -1,8 +1,34 @@
 import json
 import hashlib
 import requests
+import time
 from datetime import datetime
 from django.conf import settings
+from pathlib import Path
+
+# PyCardano imports
+try:
+    from pycardano import (
+        BlockFrostChainContext,
+        TransactionBuilder as PyCardanoTransactionBuilder,
+        TransactionOutput,
+        Value,
+        Metadata,
+        AlonzoMetadata,
+        AuxiliaryData,
+        TransactionBody,
+        TransactionWitnessSet,
+        VerificationKeyWitness,
+        Transaction,
+        PaymentExtendedSigningKey,
+        PaymentSigningKey,
+        Address,
+        Network
+    )
+    PYCARDANO_AVAILABLE = True
+except ImportError:
+    PYCARDANO_AVAILABLE = False
+    print("⚠️ PyCardano not found. Blockchain features will be simulated.")
 
 # Optional IPFS real support
 try:
@@ -78,14 +104,113 @@ class BlockchainUtils:
     def __init__(self):
         self.network = getattr(settings, 'CARDANO_NETWORK', 'preview')
         self.blockfrost_key = getattr(settings, 'BLOCKFROST_PROJECT_ID', '')
+        self.should_broadcast = getattr(settings, 'ANCHOR_BROADCAST', True)
+
+    def _get_wallet_info(self):
+        # Logic to find and load key
+        try:
+            # Try standard location
+            skey_path = settings.BASE_DIR.parent / "backend" / "keys" / "payment.skey"
+            if not skey_path.exists():
+                skey_path = settings.BASE_DIR.parent / "secure" / "payment.skey.json"
+            
+            if not skey_path.exists():
+                print(f"❌ Signing key not found at {skey_path}")
+                return None, None
+
+            # Load key
+            try:
+                # Try loading as extended first (just in case)
+                signing_key = PaymentExtendedSigningKey.load(str(skey_path))
+            except:
+                signing_key = PaymentSigningKey.load(str(skey_path))
+
+            # Verify key validity
+            verification_key = signing_key.to_verification_key()
+            
+            # Workaround for empty verification key (if loaded as extended but is simple, or vice versa issues)
+            if len(verification_key.payload) == 0:
+                priv_bytes = signing_key.payload[:32]
+                signing_key = PaymentSigningKey(priv_bytes)
+                verification_key = signing_key.to_verification_key()
+
+            # Derive address
+            # Network.TESTNET covers Preprod and Preview
+            address = Address(payment_part=verification_key.hash(), network=Network.TESTNET)
+            
+            return address, signing_key
+            
+        except Exception as e:
+            print(f"❌ Error loading wallet: {e}")
+            return None, None
 
     def anchor_evidence_hash(self, report_id, evidence_hash, category, is_anonymous):
-        """Simulated offline anchoring"""
-        import time
-        tx_hash = hashlib.sha256(
-            f"{report_id}{evidence_hash}{time.time()}".encode()
-        ).hexdigest()
-        return tx_hash
+        """
+        Anchors the evidence hash to the Cardano blockchain.
+        Returns the transaction hash.
+        """
+        if not self.should_broadcast or not PYCARDANO_AVAILABLE:
+            print("⚠️ Broadcasting disabled or PyCardano missing. Simulating.")
+            return hashlib.sha256(f"{report_id}{evidence_hash}{time.time()}".encode()).hexdigest()
+
+        try:
+            print(f"🔗 Anchoring Report {report_id} to Cardano ({self.network})...")
+            
+            # 1. Setup Context
+            context = BlockFrostChainContext(
+                project_id=self.blockfrost_key,
+                base_url="https://cardano-preview.blockfrost.io/api"
+            )
+            
+            # 2. Get Wallet
+            payment_address, signing_key = self._get_wallet_info()
+            if not payment_address:
+                raise Exception("Could not load wallet for signing.")
+                
+            # 3. Build Metadata
+            meta_dict = {
+                674: {
+                    "msg": [f"RRS Report: {report_id}", f"Cat: {category}"],
+                    "hash": evidence_hash,
+                    "anon": "Yes" if is_anonymous else "No",
+                    "ts": int(time.time())
+                }
+            }
+            
+            metadata_obj = Metadata(meta_dict)
+            alonzo_metadata = AlonzoMetadata(metadata=metadata_obj)
+            auxiliary_data = AuxiliaryData(data=alonzo_metadata)
+            
+            # 4. Build Transaction
+            builder = PyCardanoTransactionBuilder(context)
+            builder.add_input_address(payment_address)
+            builder.add_output(TransactionOutput(payment_address, Value(1500000))) # Min ADA
+            builder.auxiliary_data = auxiliary_data
+            
+            tx_body = builder.build(change_address=payment_address)
+            
+            # 5. Sign
+            signature = signing_key.sign(tx_body.hash())
+            vk = signing_key.to_verification_key()
+            vk_witness = VerificationKeyWitness(vk, signature)
+            witness_set = TransactionWitnessSet(vkey_witnesses=[vk_witness])
+            
+            tx = Transaction(tx_body, witness_set, auxiliary_data=auxiliary_data)
+            
+            # 6. Submit
+            print("🚀 Submitting transaction to Blockfrost...")
+            context.submit_tx(tx)
+            
+            tx_id = str(tx.id)
+            print(f"✅ Transaction submitted: {tx_id}")
+            return tx_id
+
+        except Exception as e:
+            print(f"❌ Blockchain anchoring failed: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback to simulation so the report is still saved
+            return f"FAILED_ANCHOR_{int(time.time())}"
 
     def verify_evidence_hash(self, report_id, evidence_hash):
         """Simulated verification"""

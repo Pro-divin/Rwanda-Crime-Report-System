@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Certificate - {{ report.reference_code }}</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background: #f0f2f5;
+            padding: 40px 20px;
+            color: #333;
+        }
+        .certificate-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 50px;
+            border: 10px solid #0088ce;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 8rem;
+            color: rgba(0, 136, 206, 0.05);
+            font-weight: bold;
+            z-index: 0;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            color: #0088ce;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .header p {
+            font-size: 1.1rem;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+        .verification-badge {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .badge-icon {
+            font-size: 4rem;
+            color: #28a745;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .badge-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+            text-transform: uppercase;
+        }
+        .report-details {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #eee;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 5px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .detail-value {
+            font-family: 'Courier New', monospace;
+            color: #000;
+        }
+        .blockchain-proof {
+            margin-top: 30px;
+        }
+        .hash-box {
+            background: #e8f5e9;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .hash-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #28a745;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .explorer-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #0088ce;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .explorer-link:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .explanation {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 30px;
+            font-size: 0.9rem;
+            font-family: sans-serif;
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .certificate-container { border: 5px solid #0088ce; box-shadow: none; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="certificate-container">
+    <div class="watermark">VERIFIED</div>
+    
+    <div class="header">
+        <h1>Certificate of Authenticity</h1>
+        <p>Blockchain Verification Record</p>
+    </div>
+
+    <div class="content">
+        <div class="verification-badge">
+            <span class="badge-icon">✅</span>
+            <span class="badge-text">Officially Verified</span>
+            <div style="font-size: 1rem; color: #666; margin-top: 5px;">
+                Anchored on Cardano Blockchain
+            </div>
+        </div>
+
+        <div class="report-details">
+            <div class="detail-row">
+                <span class="detail-label">Reference Code:</span>
+                <span class="detail-value">{{ report.reference_code }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Category:</span>
+                <span class="detail-value">{{ report.get_category_display }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Submission Date:</span>
+                <span class="detail-value">{{ report.created_at|date:"F d, Y H:i:s" }} UTC</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Location:</span>
+                <span class="detail-value">{{ report.location_description|default:"N/A" }}</span>
+            </div>
+        </div>
+
+        <div class="blockchain-proof">
+            <h3>🔒 Blockchain Immutable Record</h3>
+            
+            <div class="hash-box">
+                <span class="hash-label">Document Digital Fingerprint (SHA-256)</span>
+                {{ report.evidence_hash }}
+            </div>
+
+            <div class="hash-box" style="background: #e3f2fd; border-color: #b8daff;">
+                <span class="hash-label" style="color: #0088ce;">Blockchain Transaction Hash</span>
+                {{ report.transaction_hash }}
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Network:</span>
+                <span class="detail-value">Cardano (Preview Testnet)</span>
+            </div>
+            
+            {% if anchor %}
+            <div class="detail-row">
+                <span class="detail-label">Block Number:</span>
+                <span class="detail-value">
+                    {% if anchor.block_number %}
+                        #{{ anchor.block_number }}
+                    {% else %}
+                        <span style="color: #ffc107; font-weight: bold;">Pending</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                    {% if anchor.confirmations and anchor.confirmations > 0 %}
+                        <span style="color: #28a745; font-weight: bold;">Confirmed</span> ({{ anchor.confirmations }} confirmations)
+                    {% else %}
+                        <span style="color: #ffc107; font-weight: bold;">Pending Confirmation</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            <a href="https://preview.cardanoscan.io/transaction/{{ report.transaction_hash }}" target="_blank" class="explorer-link">
+                🔍 View on Public Blockchain Explorer
+            </a>
+        </div>
+
+        <div class="explanation">
+            <strong>What does this mean?</strong><br>
+            This certificate proves that the report <strong>{{ report.reference_code }}</strong> was submitted and recorded on the public Cardano blockchain. 
+            The "Digital Fingerprint" ensures that the content of the report has not been altered since submission. 
+            Any change to the report data would result in a different fingerprint, invalidating this certificate.
+        </div>
+    </div>
+
+    <div class="footer">
+        Generated by Rwanda Report System (RRS) • {{ now|date:"Y-m-d H:i:s" }}<br>
+        <button class="no-print" onclick="window.print()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">🖨️ Print Certificate</button>
+    </div>
+</div>
+
+</body>
+</html>

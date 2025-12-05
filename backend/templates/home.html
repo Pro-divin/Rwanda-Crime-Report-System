@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Rwanda Report System - Secure Crime Reporting</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            line-height: 1.2;
+        }
+
+        .hero .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            margin-bottom: 15px;
+        }
+
+        .hero .description {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            max-width: 700px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
+        }
+
+        .button {
+            background: #0088ce;
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .button.primary {
+            background: linear-gradient(135deg, #00a896 0%, #028174 100%);
+            font-size: 1.2rem;
+            padding: 18px 36px;
+        }
+
+        .button.secondary {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .button.dashboard {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .features {
+            max-width: 1200px;
+            margin: 0 auto 60px;
+            padding: 0 20px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .stats {
+            max-width: 1200px;
+            margin: 0 auto 60px;
+            padding: 0 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .info-section {
+            max-width: 800px;
+            margin: 0 auto 60px;
+            padding: 40px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        .info-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .info-section p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .trust-badges {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .footer {
+            background: rgba(0,0,0,0.2);
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .footer p {
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .tech-stack {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .button {
+                justify-content: center;
+            }
+
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero, .features, .stats, .info-section {
+            animation: fadeIn 0.8s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                
+                <span>Rwanda Crime Report System</span>
+            </div>
+            
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1> Secure Crime Reporting<br>for a Safer Rwanda</h1>
+        <p class="subtitle">Report incidents anonymously and securely</p>
+        <p class="description">
+            A revolutionary platform built on Cardano blockchain technology, ensuring your reports are tamper-proof, 
+            confidential, and permanently recorded for justice and accountability.
+        </p>
+
+        <div class="cta-buttons">
+            <a href="/report/submit/" class="button primary">
+                📝 Report Incident
+            </a>
+            <a href="/report/status/" class="button secondary">
+                🔍 Check Status
+            </a>
+            <a href="/dashboard/" class="button dashboard">
+                👮 Admin Dashboard
+            </a>
+        </div>
+    </section>
+
+    <section class="features">
+        <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 10px;">Why Choose Our Platform?</h2>
+        <p style="text-align: center; opacity: 0.9; margin-bottom: 20px;">Cutting-edge technology meets community safety</p>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Complete Anonymity</h3>
+                <p>Report crimes without revealing your identity. Your privacy is our top priority.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⛓️</div>
+                <h3>Blockchain Protected</h3>
+                <p>Evidence stored on Cardano blockchain ensures data cannot be altered or deleted.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Fast Response</h3>
+                <p>Instant notification to authorities for rapid emergency response and action.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Evidence Security</h3>
+                <p>Upload photos, videos, and documents with military-grade encryption protection.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Track Progress</h3>
+                <p>Monitor your report status in real-time from submission to resolution.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3>24/7 Availability</h3>
+                <p>Report incidents anytime, anywhere in Rwanda with full mobile support.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 10px;">Making Rwanda Safer</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">🔐</div>
+                <div class="stat-label">100% Secure</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">⚡</div>
+                <div class="stat-label">Instant Alerts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">🇷🇼</div>
+                <div class="stat-label">Nationwide Coverage</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Always Available</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="info-section">
+        <h2>How It Works</h2>
+        <p><strong>1. Report:</strong> Submit your incident details through our secure form. Include photos, videos, or documents as evidence.</p>
+        <p><strong>2. Verify:</strong> Your report is encrypted and recorded on the Cardano blockchain, creating an immutable record.</p>
+        <p><strong>3. Action:</strong> Authorities are immediately notified and can begin investigation with access to tamper-proof evidence.</p>
+        <p><strong>4. Track:</strong> Monitor the progress of your report and receive updates until resolution.</p>
+        
+        <div class="trust-badges">
+            <div class="badge">
+                <span>✅</span>
+                <span>Verified Platform</span>
+            </div>
+            <div class="badge">
+                <span>🔐</span>
+                <span>End-to-End Encryption</span>
+            </div>
+            <div class="badge">
+                <span>⛓️</span>
+                <span>Blockchain Secured</span>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p><strong>Emergency Services:</strong> For immediate life-threatening emergencies, call 112</p>
+        <p>Rwanda Report System - Building a safer community through technology</p>
+        <div class="tech-stack">
+            <span>Powered by:</span>
+            <span><strong>Cardano Blockchain</strong></span>
+            <span>•</span>
+            <span><strong>Aiken Smart Contracts</strong></span>
+            <span>•</span>
+            <span><strong>Military-Grade Encryption</strong></span>
+        </div>
+        <p style="margin-top: 20px; font-size: 0.9rem;">© 2025 Rwanda CrimeReport System. All rights reserved.</p>
+    </footer>
+</body>
+</html>

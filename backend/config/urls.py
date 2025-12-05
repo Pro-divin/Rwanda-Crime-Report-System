@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from apps.reports.views import ReportListAPI
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,6 +11,7 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     path('api/auth/', include('apps.users.urls')),
     path('api/reports/', include('apps.reports.urls')),
+    path('api/reports/list/', ReportListAPI.as_view(), name='api_reports_list_direct'),
     path('api/blockchain/', include('apps.blockchain.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     path('', include('apps.reports.urls')),

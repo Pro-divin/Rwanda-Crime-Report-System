@@ -9,16 +9,16 @@ from .models import Report, ReportUpdate, AuditLog
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
     list_display = (
-        'reference_code', 'status_badge', 'category', 'priority', 'is_anonymous',
-        'reporter_name', 'reporter_phone',
+        'reference_code', 'status_badge', 'category', 'priority', 'anonymous_badge',
+        'reporter_display', 'reporter_phone',
         'created_at', 'updated_at_short'
     )
     list_filter = ('category', 'status', 'priority', 'is_anonymous', 'created_at')
     search_fields = ('reference_code', 'description', 'reporter_name', 'reporter_email')
     readonly_fields = (
-        'reference_code', 'ipfs_cid', 'evidence_json_cid', 'evidence_hash',
+        'reference_code', 'ipfs_cid', 'evidence_json_cid', 'ipfs_report_cid', 'evidence_hash',
         'transaction_hash', 'is_hash_anchored', 'verified_on_chain',
-        'media_file_preview', 'evidence_json_preview',
+        'media_file_preview', 'evidence_json_preview', 'ipfs_report_preview',
         'created_at', 'updated_at'
     )
     fieldsets = (
@@ -27,11 +27,13 @@ class ReportAdmin(admin.ModelAdmin):
                        'latitude', 'longitude', 'status', 'priority')
         }),
         ('Reporter Info', {
-            'fields': ('is_anonymous', 'reporter_name', 'reporter_phone', 'reporter_email', 'user')
+            'fields': ('is_anonymous', 'reporter_name', 'reporter_phone', 'reporter_email', 'user'),
+            'description': 'Check "Is anonymous" to hide reporter identity. Reporter fields will be ignored if anonymous.'
         }),
         ('Media & IPFS', {
             'fields': ('media_file', 'media_file_preview', 'ipfs_cid', 
                        'evidence_json_preview', 'evidence_json_cid',
+                       'ipfs_report_preview', 'ipfs_report_cid',
                        'evidence_hash', 'transaction_hash', 'is_hash_anchored', 'verified_on_chain')
         }),
         ('Timestamps', {
@@ -66,9 +68,151 @@ class ReportAdmin(admin.ModelAdmin):
         return "—"
     updated_at_short.short_description = 'Last Updated'
 
+    def anonymous_badge(self, obj):
+        """Display anonymous status with badge"""
+        if obj.is_anonymous:
+            return format_html(
+                '<span style="background-color: #6c757d; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">🔒 Anonymous</span>'
+            )
+        return format_html(
+            '<span style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">👤 Public</span>'
+        )
+    anonymous_badge.short_description = 'Reporter Type'
+
+    def reporter_display(self, obj):
+        """Display reporter name or 'Anonymous' if anonymous"""
+        if obj.is_anonymous:
+            return format_html('<em style="color: #999;">Anonymous</em>')
+        return obj.reporter_name or format_html('<em style="color: #999;">Not provided</em>')
+    reporter_display.short_description = 'Reporter Name'
+
+    # ========== DYNAMIC FORM BEHAVIOR ==========
+    class Media:
+        js = ('admin/js/report_admin.js',)
+        css = {
+            'all': ('admin/css/report_admin.css',)
+        }
+
+    # ========== DELETION PROTECTION ==========
+    def has_delete_permission(self, request, obj=None):
+        """
+        Prevent deletion of reports anchored to blockchain/IPFS
+        Evidence on distributed network cannot be deleted!
+        """
+        if obj:
+            # Check if report is anchored to blockchain
+            if obj.evidence_hash:
+                from apps.blockchain.models import BlockchainAnchor
+                try:
+                    anchor = BlockchainAnchor.objects.get(report_id=obj.reference_code)
+                    if anchor.transaction_hash:
+                        messages.error(
+                            request,
+                            format_html(
+                                '🔒 <strong>Cannot delete {}</strong>: '
+                                'Report is permanently anchored to blockchain (TX: {}...). '
+                                'Evidence is immutable and preserved on 4000+ nodes globally. '
+                                '<br><br>'
+                                '📦 <strong>IPFS:</strong> {} nodes have full report<br>'
+                                '⛓️ <strong>Cardano:</strong> {} validator nodes have hash<br><br>'
+                                '💡 To hide from view, archive the report instead of deleting.',
+                                obj.reference_code,
+                                anchor.transaction_hash[:16],
+                                "1000+",
+                                "3000+"
+                            )
+                        )
+                        return False
+                except BlockchainAnchor.DoesNotExist:
+                    pass
+            
+            # Check if report is on IPFS
+            if obj.ipfs_report_cid:
+                messages.error(
+                    request,
+                    format_html(
+                        '🔒 <strong>Cannot delete {}</strong>: '
+                        'Report is distributed on IPFS network (CID: {}...). '
+                        'Content is replicated across 1000+ nodes globally and cannot be deleted. '
+                        '<br><br>'
+                        '🌐 Report is accessible via public gateways:<br>'
+                        '• https://ipfs.io/ipfs/{}<br>'
+                        '• https://gateway.pinata.cloud/ipfs/{}<br><br>'
+                        '💡 Deleting from database won\'t remove from IPFS. Archive instead.',
+                        obj.reference_code,
+                        obj.ipfs_report_cid[:16],
+                        obj.ipfs_report_cid,
+                        obj.ipfs_report_cid
+                    )
+                )
+                return False
+        
+        # Allow deletion of non-anchored reports (only by superusers)
+        return request.user.is_superuser
+    
+    def delete_model(self, request, obj):
+        """
+        Log deletion attempts and prevent deletion of anchored reports
+        """
+        # Create audit log for deletion attempt
+        AuditLog.objects.create(
+            user=request.user,
+            action='delete_attempt',
+            resource=f'Report {obj.reference_code}',
+            details={
+                'reference_code': obj.reference_code,
+                'ipfs_cid': obj.ipfs_report_cid,
+                'evidence_hash': obj.evidence_hash,
+                'category': obj.category,
+                'status': 'PREVENTED' if (obj.evidence_hash or obj.ipfs_report_cid) else 'ALLOWED',
+                'reason': 'Report anchored to blockchain/IPFS' if (obj.evidence_hash or obj.ipfs_report_cid) else 'Not anchored'
+            }
+        )
+        
+        # Double-check: Prevent deletion if anchored
+        if obj.evidence_hash or obj.ipfs_report_cid:
+            messages.error(
+                request,
+                f'🚫 Deletion prevented: {obj.reference_code} is immutably stored on distributed network!'
+            )
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied(
+                "Cannot delete anchored report. Evidence is permanently preserved on 4000+ nodes."
+            )
+        
+        # Log successful deletion (only for non-anchored reports)
+        AuditLog.objects.create(
+            user=request.user,
+            action='delete_report',
+            resource=f'Report {obj.reference_code}',
+            details={
+                'reference_code': obj.reference_code,
+                'category': obj.category,
+                'status': 'DELETED',
+                'note': 'Non-anchored report deleted by superuser'
+            }
+        )
+        
+        super().delete_model(request, obj)
+
     # ========== STATUS CHANGE TRACKING ==========
     def save_model(self, request, obj, form, change):
         """Track status changes and create ReportUpdate entries"""
+        
+        # ========== ANONYMOUS REPORTER PROTECTION ==========
+        # If report is anonymous, clear reporter information
+        if obj.is_anonymous:
+            obj.reporter_name = ""
+            obj.reporter_phone = ""
+            obj.reporter_email = ""
+            obj.user = None
+            
+            if not change:  # Only show message for new reports
+                messages.info(
+                    request,
+                    f"ℹ️ Report {obj.reference_code or 'new'} marked as anonymous. Reporter identity will be hidden."
+                )
+        
         if change:  # Only for updates, not new records
             try:
                 # Get the original object from database
@@ -90,6 +234,19 @@ class ReportAdmin(admin.ModelAdmin):
                         request,
                         f"✓ Report {obj.reference_code} status updated: {original.get_status_display()} → {obj.get_status_display()}"
                     )
+                
+                # Check if anonymous status changed
+                if original.is_anonymous != obj.is_anonymous:
+                    if obj.is_anonymous:
+                        messages.warning(
+                            request,
+                            f"⚠️ Report {obj.reference_code} changed to ANONYMOUS. Reporter information cleared."
+                        )
+                    else:
+                        messages.info(
+                            request,
+                            f"ℹ️ Report {obj.reference_code} changed to PUBLIC. You can now add reporter information."
+                        )
             except Report.DoesNotExist:
                 pass
         
@@ -104,7 +261,6 @@ class ReportAdmin(admin.ModelAdmin):
             return format_html('<a href="https://ipfs.io/ipfs/{}" target="_blank">View IPFS File</a>', obj.ipfs_cid)
         return "No File"
     media_file_preview.short_description = "Media Preview"
-
     # -------------------------------
     # JSON EVIDENCE PREVIEW
     # -------------------------------
@@ -112,6 +268,32 @@ class ReportAdmin(admin.ModelAdmin):
         if obj.evidence_json_cid:
             return format_html('<a href="https://ipfs.io/ipfs/{}" target="_blank">View JSON Evidence</a>', obj.evidence_json_cid)
         return "No Evidence JSON"
+    evidence_json_preview.short_description = "Evidence JSON Preview"
+    
+    # -------------------------------
+    # IPFS DISTRIBUTED REPORT PREVIEW
+    # -------------------------------
+    def ipfs_report_preview(self, obj):
+        if obj.ipfs_report_cid:
+            return format_html(
+                '<div style="background: #f0f9ff; padding: 10px; border-radius: 5px; border: 1px solid #0ea5e9;">'
+                '<strong style="color: #0369a1;">🌐 Distributed Storage (1000+ Nodes)</strong><br><br>'
+                '<strong>IPFS CID:</strong> <code>{}</code><br><br>'
+                '<strong>Gateway URLs:</strong><br>'
+                '• <a href="https://ipfs.io/ipfs/{}" target="_blank">ipfs.io Gateway</a><br>'
+                '• <a href="https://gateway.pinata.cloud/ipfs/{}" target="_blank">Pinata Gateway</a><br>'
+                '• <a href="https://cloudflare-ipfs.com/ipfs/{}" target="_blank">Cloudflare Gateway</a><br><br>'
+                '<em style="color: #64748b;">✓ Distributed across 1000+ IPFS nodes globally</em><br>'
+                '<em style="color: #64748b;">✓ Content-addressed, immutable storage</em>'
+                '</div>',
+                obj.ipfs_report_cid, obj.ipfs_report_cid, obj.ipfs_report_cid, obj.ipfs_report_cid
+            )
+        return format_html(
+            '<div style="background: #fef3c7; padding: 10px; border-radius: 5px; border: 1px solid #f59e0b;">'
+            '<em>⚠️ Not uploaded to IPFS (created before distributed storage integration)</em>'
+            '</div>'
+        )
+    ipfs_report_preview.short_description = "IPFS Distributed Report"
     evidence_json_preview.short_description = "Evidence JSON Preview"
 
 # ========== REPORT UPDATE HISTORY ADMIN ==========
@@ -161,7 +343,115 @@ class ReportUpdateAdmin(admin.ModelAdmin):
 # ========== AUDIT LOG ADMIN ==========
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ('user', 'action', 'resource', 'ip_address', 'device_info', 'created_at')
-    list_filter = ('action', 'resource', 'created_at', 'user')
-    search_fields = ('user__username', 'resource', 'details')
-    readonly_fields = ('user', 'action', 'resource', 'details', 'ip_address', 'device_info', 'created_at')
+    list_display = ('created_at_short', 'user_display', 'action_badge', 'resource_display', 'ip_address', 'device_short')
+    list_filter = ('action', 'created_at', 'user')
+    search_fields = ('user__username', 'resource', 'details', 'ip_address')
+    readonly_fields = ('user', 'action', 'resource', 'details_display', 'ip_address', 'device_info', 'created_at')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Action Info', {
+            'fields': ('user', 'action', 'resource', 'created_at')
+        }),
+        ('Details', {
+            'fields': ('details_display',)
+        }),
+        ('Request Info', {
+            'fields': ('ip_address', 'device_info')
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        """Disable manual creation of audit logs"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """Make audit logs read-only"""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of audit logs from admin"""
+        return request.user.is_superuser  # Only superusers can delete
+    
+    def created_at_short(self, obj):
+        """Compact timestamp"""
+        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    created_at_short.short_description = 'Timestamp'
+    created_at_short.admin_order_field = 'created_at'
+    
+    def user_display(self, obj):
+        """Display username or 'System' for null users"""
+        if obj.user:
+            return format_html(
+                '<strong>{}</strong><br><small>{}</small>',
+                obj.user.username,
+                obj.user.get_full_name() or obj.user.email
+            )
+        return format_html('<em style="color: #999;">System</em>')
+    user_display.short_description = 'User'
+    
+    def action_badge(self, obj):
+        """Color-coded action badge"""
+        action_colors = {
+            'create_report': '#28a745',
+            'update_report': '#ffc107',
+            'delete_report': '#dc3545',
+            'status_change': '#17a2b8',
+            'user_login': '#007bff',
+            'user_logout': '#6c757d',
+            'user_login_failed': '#dc3545',
+            'view_list': '#e0e0e0',
+            'view_form': '#f0f0f0',
+            'save': '#28a745',
+        }
+        color = action_colors.get(obj.action, '#999999')
+        text_color = 'white' if color not in ['#e0e0e0', '#f0f0f0', '#ffc107'] else '#333'
+        
+        return format_html(
+            '<span style="background-color: {}; color: {}; padding: 4px 8px; border-radius: 3px; font-weight: bold; white-space: nowrap; display: inline-block;">{}</span>',
+            color,
+            text_color,
+            obj.action.replace('_', ' ').title()
+        )
+    action_badge.short_description = 'Action'
+    action_badge.admin_order_field = 'action'
+    
+    def resource_display(self, obj):
+        """Display resource with icon"""
+        if 'report' in obj.resource:
+            icon = '📄'
+        elif 'auth' in obj.resource or 'user' in obj.resource:
+            icon = '👤'
+        else:
+            icon = '📦'
+        
+        return format_html('{} <code>{}</code>', icon, obj.resource)
+    resource_display.short_description = 'Resource'
+    
+    def device_short(self, obj):
+        """Truncated device info"""
+        if not obj.device_info:
+            return '—'
+        
+        # Extract browser info
+        device = obj.device_info
+        if 'Chrome' in device:
+            return '🌐 Chrome'
+        elif 'Firefox' in device:
+            return '🦊 Firefox'
+        elif 'Safari' in device:
+            return '🧭 Safari'
+        elif 'Edge' in device:
+            return '🌊 Edge'
+        else:
+            return '🖥️ ' + device[:20] + '...' if len(device) > 20 else device
+    device_short.short_description = 'Device'
+    
+    def details_display(self, obj):
+        """Pretty-print JSON details"""
+        import json
+        if obj.details:
+            formatted = json.dumps(obj.details, indent=2)
+            return format_html('<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">{}</pre>', formatted)
+        return '—'
+    details_display.short_description = 'Details'

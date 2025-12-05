@@ -141,6 +141,24 @@
             flex-wrap: wrap;
         }
 
+        /* Lookup form */
+        .status-search {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0 10px;
+            padding: 0 20px;
+        }
+
+        .status-search input[type="text"] {
+            flex: 1;
+            max-width: 480px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
         .btn {
             padding: 12px 24px;
             border: none;
@@ -222,6 +240,442 @@
                 justify-content: center;
             }
         }
+
+        .verification-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .badge-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .badge-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .data-card {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px 0;
+            border-bottom: 1px dashed #dee2e6;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .data-label {
+            font-weight: 600;
+            color: #495057;
+            flex: 0 0 35%;
+        }
+
+        .data-value {
+            color: #212529;
+            flex: 1;
+            word-break: break-word;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .hash-section {
+            background: #e3f2fd;
+            border: 2px solid #0088ce;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .hash-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #0088ce;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hash-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            color: #0056b3;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #0088ce;
+        }
+
+        .ipfs-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .ipfs-link:hover {
+            background: #218838;
+            text-decoration: none;
+            color: white;
+        }
+
+        .tampering-alert {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #721c24;
+        }
+
+        .tampering-alert h3 {
+            color: #dc3545;
+            margin-top: 0;
+        }
+
+        .timestamp-info {
+            background: #e7e7ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            top: 5vh;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .verification-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: #e8f5e9;
+            border-left: 4px solid #28a745;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .verification-badge .check-icon {
+            font-size: 1.5rem;
+        }
+
+        .data-section {
+            margin-bottom: 25px;
+        }
+
+        .data-section-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95rem;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            font-weight: 600;
+            color: #2d3748;
+            min-width: 150px;
+        }
+
+        .data-value {
+            color: #4a5568;
+            word-break: break-word;
+            flex: 1;
+            text-align: right;
+        }
+
+        .data-value.full-width {
+            text-align: left;
+            margin-top: 5px;
+            padding: 10px;
+            background: #f7f7f7;
+            border-radius: 4px;
+            border-left: 3px solid #0088ce;
+        }
+
+        .hash-section {
+            background: #f0f7ff;
+            border-left: 4px solid #0088ce;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .hash-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0066a4;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .hash-display {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #2d3748;
+            word-break: break-all;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #d0d0d0;
+            line-height: 1.6;
+        }
+
+        .hash-short {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .ipfs-link-container {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .ipfs-link-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #e65100;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .ipfs-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ff9800;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .ipfs-link-btn:hover {
+            background: #f57c00;
+            transform: translateX(3px);
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .btn-close-modal {
+            background: #6c757d;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close-modal:hover {
+            background: #5a6268;
+        }
+
+        .btn-copy-hash {
+            background: #0088ce;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-copy-hash:hover {
+            background: #0066a4;
+        }
+
+        @media (max-width: 600px) {
+            .modal-content {
+                width: 95%;
+                top: 10vh;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .data-row {
+                flex-direction: column;
+            }
+
+            .data-label {
+                margin-bottom: 5px;
+            }
+
+            .data-value {
+                text-align: left;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+
+            .btn-copy-hash,
+            .btn-close-modal {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -232,6 +686,14 @@
         </div>
 
         <div class="content">
+            <!-- Reference lookup form -->
+            <div class="status-search">
+                <form id="statusLookupForm" onsubmit="return lookupStatus(event)">
+                    <input id="lookupInput" type="text" placeholder="Enter reference code (e.g., RRS-2024-00123)" aria-label="Reference code" />
+                    <button type="submit" class="btn btn-primary">🔍 Lookup</button>
+                </form>
+            </div>
+
             {% if report %}
             <div class="status-card">
                 <div class="reference-code">{{ report.reference_code }}</div>
@@ -281,6 +743,30 @@
                         </code>
                     </div>
                     {% endif %}
+
+                    {% if report.transaction_hash %}
+                    <div style="margin-top: 10px; font-size: 0.9rem;">
+                        <strong>Blockchain Record:</strong> 
+                        <a href="https://preview.cardanoscan.io/transaction/{{ report.transaction_hash }}" target="_blank" style="color: #0056b3; text-decoration: underline; font-weight: bold;">
+                            🔍 View on Public Explorer
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if report.media_ipfs_url %}
+                    <div style="margin-top: 10px; font-size: 0.9rem;">
+                        <strong>Media Evidence (IPFS):</strong> 
+                        <a href="{{ report.media_ipfs_url }}" target="_blank" style="color: #0056b3; text-decoration: underline; font-weight: bold;">
+                            📂 View Uploaded File
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="verifyIntegrity('{{ report.reference_code }}')" class="btn btn-primary" style="background-color: #17a2b8; font-size: 0.9rem; padding: 8px 16px;">
+                            🛡️ Verify Integrity
+                        </button>
+                    </div>
                 </div>
                 {% endif %}
 
@@ -313,6 +799,99 @@
 
             <div class="back-link">
                 <a href="/">← Return to Rwanda Report System Homepage</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Modal -->
+    <div id="verificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✅ Integrity Verified</h2>
+                <button class="close-btn" onclick="closeVerificationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="verification-badge">
+                    <span class="check-icon">✓</span>
+                    <span>All data matches the immutable blockchain record</span>
+                </div>
+
+                <!-- Hash Comparison Section -->
+                <div class="hash-section">
+                    <div class="hash-label">Hash Status</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: #0066a4; margin-bottom: 5px; font-weight: 600;">Current Database</div>
+                            <div class="hash-display" style="font-size: 0.85rem;" id="currentHashDisplay"></div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #28a745; margin-bottom: 5px; font-weight: 600;">Blockchain Record</div>
+                            <div class="hash-display" style="font-size: 0.85rem;" id="blockchainHashDisplay"></div>
+                        </div>
+                    </div>
+                    <div class="hash-short">Hashes are identical - No tampering detected</div>
+                </div>
+
+                <!-- Verified Data Section -->
+                <div class="data-section">
+                    <div class="data-section-title">Report Information</div>
+                    <div class="data-row">
+                        <span class="data-label">Reference Code</span>
+                        <span class="data-value" id="dataRefCode"></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Category</span>
+                        <span class="data-value" id="dataCategory"></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Submitted Date</span>
+                        <span class="data-value" id="dataSubmitted"></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Location</span>
+                        <span class="data-value" id="dataLocation"></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Anonymous Report</span>
+                        <span class="data-value" id="dataAnonymous"></span>
+                    </div>
+                </div>
+
+                <!-- Coordinates Section -->
+                <div class="data-section">
+                    <div class="data-section-title">Coordinates</div>
+                    <div class="data-row">
+                        <span class="data-label">Latitude</span>
+                        <span class="data-value" id="dataLatitude"></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Longitude</span>
+                        <span class="data-value" id="dataLongitude"></span>
+                    </div>
+                </div>
+
+                <!-- Description Section -->
+                <div class="data-section">
+                    <div class="data-section-title">Description</div>
+                    <div class="data-value full-width" id="dataDescription"></div>
+                </div>
+
+                <!-- IPFS Evidence Link -->
+                <div class="ipfs-link-container">
+                    <div class="ipfs-link-title">Attached Media Evidence</div>
+                    <a id="ipfsLink" href="#" target="_blank" class="ipfs-link-btn">
+                        📂 View Evidence on IPFS
+                    </a>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button onclick="copyHashToClipboard()" class="btn-copy-hash">
+                    📋 Copy Hash
+                </button>
+                <button onclick="closeVerificationModal()" class="btn-close-modal">
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -358,6 +937,215 @@
 
             console.log('Report status page loaded successfully');
         });
+
+        // Lookup helper for the reference form
+        function lookupStatus(e) {
+            e.preventDefault();
+            const v = document.getElementById('lookupInput').value.trim();
+            if (!v) return false;
+            // Redirect to the status page for the given reference
+            window.location.href = '/report/status/' + encodeURIComponent(v) + '/';
+            return false;
+        }
+
+        function verifyIntegrity(referenceCode) {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Verifying...';
+            btn.disabled = true;
+
+            fetch(`/report/verify/${referenceCode}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (data.match) {
+                            // Hash matches - Display verified data modal
+                            displayVerificationModal(data, true);
+                        } else {
+                            // Tampering detected - Display tampering alert modal
+                            displayTamperingModal(data);
+                        }
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while verifying integrity.');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+
+        function displayVerificationModal(data, isMatch) {
+            const vdata = data.verified_data;
+            const modal = document.getElementById('verificationModal');
+            const modalTitle = modal.querySelector('.modal-header h2');
+            const modalBody = modal.querySelector('.modal-body');
+            
+            if (isMatch) {
+                modalTitle.innerHTML = '✅ INTEGRITY VERIFICATION PASSED';
+                
+                modalBody.innerHTML = `
+                    <div class="verification-badge badge-pass">✅ Data Verified & Authentic</div>
+                    
+                    <div class="alert-box">
+                        All submitted report data matches the immutable blockchain record. No tampering detected.
+                    </div>
+                    
+                    <div class="data-card">
+                        <div class="data-row">
+                            <span class="data-label">Reference Code:</span>
+                            <span class="data-value">${vdata.reference_code}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Category:</span>
+                            <span class="data-value">${vdata.category}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Description:</span>
+                            <span class="data-value">${vdata.description}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Location:</span>
+                            <span class="data-value">${vdata.location}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Coordinates:</span>
+                            <span class="data-value">(${vdata.latitude}, ${vdata.longitude})</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Submitted:</span>
+                            <span class="data-value">${new Date(vdata.submitted_at).toLocaleString()}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Anonymous Report:</span>
+                            <span class="data-value">${vdata.is_anonymous ? 'Yes' : 'No'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="hash-section">
+                        <div class="hash-label">Blockchain Digital Fingerprint (SHA-256)</div>
+                        <div class="hash-value">${data.current_hash}</div>
+                    </div>
+                    
+                    ${vdata.media_ipfs_url && vdata.media_ipfs_url !== 'N/A' ? 
+                        `<a href="${vdata.media_ipfs_url}" target="_blank" class="ipfs-link">📂 View IPFS Evidence</a>` 
+                        : '<div style="color: #666; margin-top: 15px;">No media evidence attached</div>'
+                    }
+                `;
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function displayTamperingModal(data) {
+            const vdata = data.verified_data;
+            const modal = document.getElementById('verificationModal');
+            const modalTitle = modal.querySelector('.modal-header h2');
+            const modalBody = modal.querySelector('.modal-body');
+            
+            modalTitle.innerHTML = '🚨 TAMPERING DETECTED';
+            modalTitle.style.color = '#dc3545';
+            
+            let tamperingHTML = `
+                <div class="verification-badge badge-fail">⚠️ Data Tampering Alert</div>
+                
+                <div class="tampering-alert">
+                    <h3>CRITICAL ALERT - EVIDENCE OF DATA MODIFICATION</h3>
+                    <p>${data.alert}</p>
+                </div>
+                
+                <div class="timestamp-info">
+                    <strong>Original Submission:</strong> ${new Date(data.submission_date).toLocaleString()}<br>
+                    <strong>Last Modified:</strong> ${new Date(data.last_modified).toLocaleString()}<br>
+                    <strong>Days Since Submission:</strong> ${Math.floor((new Date() - new Date(data.submission_date)) / (1000 * 60 * 60 * 24))} days
+                </div>
+                
+                <div class="data-card" style="background: #fff3cd; border: 2px solid #ffc107;">
+                    <h4 style="color: #856404; margin-top: 0;">Current Database Record:</h4>
+                    <div class="data-row">
+                        <span class="data-label">Reference Code:</span>
+                        <span class="data-value">${vdata.reference_code}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Category:</span>
+                        <span class="data-value">${vdata.category}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Description:</span>
+                        <span class="data-value">${vdata.description}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Location:</span>
+                        <span class="data-value">${vdata.location}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Coordinates:</span>
+                        <span class="data-value">(${vdata.latitude}, ${vdata.longitude})</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Anonymous Report:</span>
+                        <span class="data-value">${vdata.is_anonymous ? 'Yes' : 'No'}</span>
+                    </div>
+                </div>
+                
+                <div class="hash-section" style="background: #f8d7da; border-color: #dc3545;">
+                    <div class="hash-label" style="color: #dc3545;">Database Hash (Current):</div>
+                    <div class="hash-value" style="color: #721c24; border-color: #dc3545;">${data.current_hash}</div>
+                </div>
+                
+                <div class="hash-section" style="background: #e8f5e9; border-color: #28a745;">
+                    <div class="hash-label" style="color: #28a745;">Blockchain Hash (Original Anchored):</div>
+                    <div class="hash-value" style="color: #1b5e20; border-color: #28a745;">${data.original_hash}</div>
+                </div>
+                
+                <div style="background: #ffebee; border: 2px solid #dc3545; border-radius: 8px; padding: 15px; margin-top: 20px;">
+                    <strong style="color: #dc3545;">RECOMMENDATION FOR POLICE INVESTIGATION:</strong>
+                    <ul style="margin: 10px 0; color: #721c24;">
+                        <li>Preserve all evidence immediately</li>
+                        <li>Document this tamper alert as evidence of crime</li>
+                        <li>Investigate who modified the database</li>
+                        <li>Check server access logs for unauthorized changes</li>
+                        <li>Interview database administrators</li>
+                        <li>File charges for evidence tampering</li>
+                    </ul>
+                </div>
+                
+                ${vdata.media_ipfs_url && vdata.media_ipfs_url !== 'N/A' ? 
+                    `<a href="${vdata.media_ipfs_url}" target="_blank" class="ipfs-link" style="background: #0088ce;">📂 View Original IPFS Evidence</a>` 
+                    : ''
+                }
+            `;
+            
+            modalBody.innerHTML = tamperingHTML;
+            modal.style.display = 'block';
+        }
+
+        function closeVerificationModal() {
+            document.getElementById('verificationModal').style.display = 'none';
+            // Reset modal title style
+            const modalTitle = document.querySelector('.modal-header h2');
+            if (modalTitle) modalTitle.style.color = '';
+        }
+
+        function copyHashToClipboard() {
+            if (window.currentVerificationHash) {
+                navigator.clipboard.writeText(window.currentVerificationHash).then(() => {
+                    alert('Hash copied to clipboard!');
+                });
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('verificationModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
