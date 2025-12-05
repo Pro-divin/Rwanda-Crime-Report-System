@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: rrs-system
+    env: python
+    pythonVersion: 3.11
+    buildCommand: "pip install -r backend/requirements.txt && cd backend && python manage.py migrate --noinput && python manage.py collectstatic --noinput"
+    startCommand: "cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:10000"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        value: "your-secret-key-will-be-set-in-dashboard"
+      - key: ALLOWED_HOSTS
+        value: "*.render.com,localhost,127.0.0.1"
+      - key: ANCHOR_BROADCAST
+        value: "False"
+      - key: BLOCKFROST_PROJECT_ID
+        value: "your-blockfrost-key-here"
+
+databases:
+  - name: rrs_postgres
+    engine: postgres
+    version: "14"
+    plan: free
