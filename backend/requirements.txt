@@ -10,7 +10,7 @@ django-filter==23.4
 psycopg2-binary==2.9.9  # PostgreSQL (optional)
 
 # File handling & Images
-Pillow==10.1.0
+Pillow>=10.2.0  # Updated for Python 3.13 compatibility
 python-magic==0.4.27
 
 # API & HTTP
@@ -36,6 +36,9 @@ PyJWT==2.8.1
 # Utilities
 python-decouple==3.8
 python-dateutil==2.8.2
+
+# WSGI Server for Production
+gunicorn==21.2.0
 
 # Development (optional)
 pytest==7.4.3
