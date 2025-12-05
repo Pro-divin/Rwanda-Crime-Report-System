@@ -74,52 +74,109 @@ class IPFSUtils:
         return cls._session
 
     def upload_file(self, file_path):
-        """Upload file to IPFS with graceful degradation for cloud environments"""
+        """Upload file to IPFS via Pinata or local daemon"""
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {file_path} does not exist.")
         
-        if not self.available:
-            # Generate a placeholder IPFS hash for cloud deployments without local IPFS
-            # Format: Qm + 44 base58 characters (standard IPFS v0 hash format)
-            import hashlib
-            file_hash = hashlib.sha256(open(file_path, 'rb').read()).hexdigest()
-            placeholder_cid = f"Qm{file_hash[:44]}"
-            print(f"[IPFS] Local daemon unavailable. Using placeholder CID: {placeholder_cid}")
-            return placeholder_cid
+        # Try Pinata first if API key exists
+        pinata_key = os.getenv('PINATA_API_KEY')
+        pinata_secret = os.getenv('PINATA_API_SECRET')
         
-        # Upload file with connection pooling
-        session = self._get_session()
-        with open(file_path, "rb") as f:
-            files = {"file": (os.path.basename(file_path), f)}
-            res = session.post(f"{self.api_url}/add", files=files, timeout=10)
+        if pinata_key and pinata_secret:
+            try:
+                return self._upload_to_pinata(file_path, pinata_key, pinata_secret)
+            except Exception as e:
+                print(f"[PINATA] Error: {e}. Falling back to local IPFS...")
+        
+        # Try local IPFS daemon
+        if self.available:
+            try:
+                session = self._get_session()
+                with open(file_path, "rb") as f:
+                    files = {"file": (os.path.basename(file_path), f)}
+                    res = session.post(f"{self.api_url}/add", files=files, timeout=10)
+                res.raise_for_status()
+                hash_value = res.json()['Hash']
+                print(f"[IPFS] File uploaded: {hash_value}")
+                return hash_value
+            except Exception as e:
+                print(f"[IPFS] Error: {e}")
+        
+        # Fallback: Generate placeholder (for demo without IPFS)
+        import hashlib
+        file_hash = hashlib.sha256(open(file_path, 'rb').read()).hexdigest()
+        placeholder_cid = f"Qm{file_hash[:44]}"
+        print(f"[IPFS] Using placeholder CID: {placeholder_cid}")
+        return placeholder_cid
+    
+    def _upload_to_pinata(self, file_path, api_key, api_secret):
+        """Upload file to Pinata (public IPFS pinning service)"""
+        url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+        
+        headers = {
+            "pinata_api_key": api_key,
+            "pinata_secret_api_key": api_secret,
+        }
+        
+        with open(file_path, 'rb') as f:
+            files = {'file': f}
+            res = requests.post(url, files=files, headers=headers, timeout=30)
         
         res.raise_for_status()
-        hash_value = res.json()['Hash']
-        print(f"[IPFS] File uploaded: {hash_value}")
-        return hash_value
+        cid = res.json()['IpfsHash']
+        print(f"[PINATA] File pinned: {cid}")
+        return cid
 
     def upload_json(self, data):
-        """Upload JSON data to IPFS with graceful degradation for cloud environments"""
-        if not self.available:
-            # Generate a placeholder IPFS hash for cloud deployments without local IPFS
-            json_str = json.dumps(data, sort_keys=True)
-            json_hash = hashlib.sha256(json_str.encode()).hexdigest()
-            placeholder_cid = f"Qm{json_hash[:44]}"
-            print(f"[IPFS] Local daemon unavailable. Using placeholder CID for JSON: {placeholder_cid}")
-            return placeholder_cid
-        
+        """Upload JSON data to IPFS via Pinata or local daemon"""
         json_str = json.dumps(data, sort_keys=True)
         json_bytes = json_str.encode("utf-8")
         
-        # Upload JSON with connection pooling
-        session = self._get_session()
-        files = {"file": ("data.json", json_bytes)}
-        res = session.post(f"{self.api_url}/add", files=files, timeout=10)
+        # Try Pinata first if API key exists
+        pinata_key = os.getenv('PINATA_API_KEY')
+        pinata_secret = os.getenv('PINATA_API_SECRET')
+        
+        if pinata_key and pinata_secret:
+            try:
+                return self._upload_json_to_pinata(json_bytes, pinata_key, pinata_secret)
+            except Exception as e:
+                print(f"[PINATA] Error: {e}. Falling back to local IPFS...")
+        
+        # Try local IPFS daemon
+        if self.available:
+            try:
+                session = self._get_session()
+                files = {"file": ("data.json", json_bytes)}
+                res = session.post(f"{self.api_url}/add", files=files, timeout=10)
+                res.raise_for_status()
+                hash_value = res.json()['Hash']
+                print(f"[IPFS] JSON uploaded: {hash_value}")
+                return hash_value
+            except Exception as e:
+                print(f"[IPFS] Error: {e}")
+        
+        # Fallback: Generate placeholder
+        json_hash = hashlib.sha256(json_bytes).hexdigest()
+        placeholder_cid = f"Qm{json_hash[:44]}"
+        print(f"[IPFS] Using placeholder CID for JSON: {placeholder_cid}")
+        return placeholder_cid
+    
+    def _upload_json_to_pinata(self, json_bytes, api_key, api_secret):
+        """Upload JSON to Pinata"""
+        url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+        
+        headers = {
+            "pinata_api_key": api_key,
+            "pinata_secret_api_key": api_secret,
+        }
+        
+        files = {'file': ('data.json', json_bytes)}
+        res = requests.post(url, files=files, headers=headers, timeout=30)
         
         res.raise_for_status()
-        hash_value = res.json()['Hash']
-        print(f"[IPFS] JSON uploaded: {hash_value}")
-        return hash_value
+        cid = res.json()['IpfsHash']
+        print(f"[PINATA] JSON pinned: {cid}")
+        return cid
 
 
 # ----------------------------------------
