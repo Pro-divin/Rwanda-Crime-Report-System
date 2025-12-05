@@ -1,0 +1,22 @@
+# Security: never commit local wallet configs or signing keys
+cardano.local.json
+*.skey
+*.vkey
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Django
+staticfiles/
+db.sqlite3
+media/
