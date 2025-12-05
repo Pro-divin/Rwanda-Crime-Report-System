@@ -10,7 +10,7 @@ django-filter==23.4
 psycopg2-binary==2.9.9  # PostgreSQL (optional)
 
 # File handling & Images
-Pillow>=10.2.0  # Updated for Python 3.13 compatibility
+Pillow>=10.2.0  # Python 3.13 compatible
 python-magic==0.4.27
 
 # API & HTTP
@@ -21,7 +21,7 @@ requests==2.31.0
 ipfshttpclient==0.8.0a2
 
 # Cardano Integration
-blockfrost-python==0.7.0
+blockfrost-python==0.6.0  # Latest stable version
 pycardano==0.16.0
 
 # Async Support
