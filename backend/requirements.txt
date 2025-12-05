@@ -7,10 +7,10 @@ django-cors-headers==4.3.0
 django-filter==23.4
 
 # Database & ORM
-psycopg2-binary==2.9.9  # PostgreSQL (optional)
+psycopg2-binary==2.9.9
 
 # File handling & Images
-Pillow>=10.2.0  # Python 3.13 compatible
+Pillow>=10.2.0
 python-magic==0.4.27
 
 # API & HTTP
@@ -21,17 +21,17 @@ requests==2.31.0
 ipfshttpclient==0.8.0a2
 
 # Cardano Integration
-blockfrost-python==0.6.0  # Latest stable version
+blockfrost-python==0.6.0
 pycardano==0.16.0
 
 # Async Support
 asgiref==3.7.1
-celery==5.3.4  # Optional: for async background tasks
-redis==5.0.1   # Optional: for celery broker
+celery==5.3.4
+redis==5.0.1
 
 # Security
 cryptography==41.0.7
-PyJWT==2.8.1
+PyJWT==2.10.1
 
 # Utilities
 python-decouple==3.8
