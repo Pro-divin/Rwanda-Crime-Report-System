@@ -15,7 +15,7 @@ python-magic==0.4.27
 
 # API & HTTP
 httpx==0.25.2
-requests==2.31.0
+requests>=2.32.3
 
 # IPFS
 ipfshttpclient==0.8.0a2
