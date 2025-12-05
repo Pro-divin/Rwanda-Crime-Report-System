@@ -1,17 +1,21 @@
 from pathlib import Path
 import os
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = 'django-insecure-sgm7j#v5qz3_qj*lv995dzry3gul+dqpxz*a6g2e1pdgp5mnps'
-DEBUG = True
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-sgm7j#v5qz3_qj*lv995dzry3gul+dqpxz*a6g2e1pdgp5mnps')
+DEBUG = config('DEBUG', default=False, cast=bool)
+
 # Allow localhost and testserver for development and automated tests
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'testserver',
+    '*.onrender.com',
+    'rwanda-crime-report-system-8.onrender.com',
 ]
 
 # Application definition
