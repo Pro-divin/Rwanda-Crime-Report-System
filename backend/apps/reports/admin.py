@@ -265,46 +265,49 @@ class ReportAdmin(admin.ModelAdmin):
             is_image = any(file_name.lower().endswith(ext) for ext in image_extensions)
             
             if is_image:
-                # Display actual image inline with thumbnail
+                # Display actual image inline
                 return format_html(
-                    '<div style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa; max-width: 400px;">'
-                    '<div style="margin-bottom: 10px;"><strong>📷 Submitted Evidence:</strong></div>'
-                    '<img src="{}" style="max-width: 100%; height: auto; max-height: 300px; border-radius: 5px; margin-bottom: 15px;" />'
-                    '<br><a href="{}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">🔍 View Full Size</a>'
+                    '<div style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa; max-width: 500px;">'
+                    '<div style="margin-bottom: 10px; font-weight: bold; color: #333;">📷 Evidence Image:</div>'
+                    '<img src="{}" style="max-width: 100%; height: auto; max-height: 400px; border-radius: 5px; display: block; margin-bottom: 15px;" alt="{}" />'
+                    '<a href="{}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">🔍 View Full Size</a>'
                     '</div>',
-                    file_url, file_url
+                    file_url, file_name, file_url
                 )
             else:
-                # For videos, audio, documents, etc.
+                # For videos, audio, documents
                 file_type = file_name.split('.')[-1].upper()
+                icon = '🎥' if file_type in ['MP4', 'MOV', 'AVI'] else '🔊' if file_type in ['MP3', 'WAV'] else '📄'
                 return format_html(
-                    '<div style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa; max-width: 400px;">'
-                    '<div style="margin-bottom: 10px;"><strong>📎 Submitted Evidence:</strong></div>'
-                    '<div style="padding: 20px; background: white; border-radius: 5px; text-align: center; margin-bottom: 15px;">'
-                    '<div style="font-size: 48px; margin-bottom: 10px;">📁</div>'
-                    '<div style="font-weight: bold; color: #333;">{}</div>'
-                    '<div style="font-size: 12px; color: #666; margin-top: 5px;">{} File</div>'
+                    '<div style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa; max-width: 500px;">'
+                    '<div style="margin-bottom: 10px; font-weight: bold; color: #333;">{} Evidence File:</div>'
+                    '<div style="padding: 20px; background: white; border-radius: 5px; text-align: center; margin-bottom: 15px; border: 1px dashed #ccc;">'
+                    '<div style="font-size: 48px; margin-bottom: 10px;">{}</div>'
+                    '<div style="font-weight: bold; color: #333; word-break: break-all;">{}</div>'
+                    '<div style="font-size: 12px; color: #666; margin-top: 5px;">{}</div>'
                     '</div>'
-                    '<a href="{}" target="_blank" download style="display: inline-block; padding: 8px 12px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">⬇️ Download Evidence</a>'
+                    '<a href="{}" target="_blank" download style="display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">⬇️ Download</a>'
                     '</div>',
-                    file_name, file_type, file_url
+                    file_type, icon, file_name, file_type, file_url
                 )
         
-        # If IPFS CID exists but no local file
-        elif obj.ipfs_cid:
+        # If IPFS CID but no local file
+        if obj.ipfs_cid:
             return format_html(
-                '<div style="border: 2px solid #0ea5e9; padding: 15px; border-radius: 8px; background: #e8f4f8; max-width: 400px;">'
-                '<div style="margin-bottom: 10px;"><strong>🌐 IPFS Distributed Storage:</strong></div>'
-                '<div style="padding: 10px; background: white; border-radius: 5px; word-break: break-all; margin-bottom: 10px; font-family: monospace; font-size: 12px; color: #333;">'
-                'CID: {}</div>'
+                '<div style="border: 2px solid #0ea5e9; padding: 15px; border-radius: 8px; background: #e8f4f8; max-width: 500px;">'
+                '<div style="margin-bottom: 10px; font-weight: bold; color: #0369a1;">🌐 Stored on IPFS:</div>'
+                '<div style="padding: 10px; background: white; border-radius: 5px; word-break: break-all; margin-bottom: 10px; font-family: monospace; font-size: 11px; color: #333; border: 1px solid #0ea5e9;">'
+                '{}</div>'
                 '<a href="https://ipfs.io/ipfs/{}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-right: 5px;">📡 View on IPFS</a>'
+                '<a href="https://gateway.pinata.cloud/ipfs/{}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">📡 Pinata Gateway</a>'
                 '</div>',
-                obj.ipfs_cid, obj.ipfs_cid
+                obj.ipfs_cid, obj.ipfs_cid, obj.ipfs_cid
             )
         
+        # No evidence
         return format_html(
-            '<div style="padding: 15px; background: #f0f0f0; border-radius: 8px; color: #666; text-align: center;">'
-            '<div style="font-size: 24px; margin-bottom: 10px;">❌</div>'
+            '<div style="padding: 15px; background: #f0f0f0; border-radius: 8px; color: #666; text-align: center; max-width: 500px;">'
+            '<div style="font-size: 32px; margin-bottom: 8px;">❌</div>'
             '<em>No evidence media submitted</em>'
             '</div>'
         )
