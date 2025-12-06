@@ -61,6 +61,65 @@
             padding: 30px;
         }
 
+        /* Messages Alert Styles */
+        .messages-container {
+            margin-bottom: 25px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .status-card {
             background: var(--background-light);
             border-radius: 8px;
@@ -237,6 +296,23 @@
             
             .content {
                 padding: clamp(15px, 5vw, 30px);
+            }
+
+            .messages-container {
+                margin-bottom: 15px;
+            }
+
+            .alert {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .close-btn {
+                align-self: flex-end;
+                margin-top: -5px;
             }
             
             .reference-code {
@@ -797,6 +873,18 @@
         </div>
 
         <div class="content">
+            <!-- Django Messages Display -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button type="button" class="close-btn" onclick="this.parentElement.style.display='none';">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <!-- Reference lookup form -->
             <div class="status-search">
                 <form id="statusLookupForm" onsubmit="return lookupStatus(event)">

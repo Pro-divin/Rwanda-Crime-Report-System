@@ -3,7 +3,7 @@ import json
 import hashlib
 import asyncio
 import requests
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework import permissions
@@ -12,6 +12,7 @@ from rest_framework import status
 from django.conf import settings
 from django.utils import timezone
 from asgiref.sync import sync_to_async
+from django.contrib import messages
 from .models import Report
 from .serializers import ReportSerializer
 from apps.blockchain.models import BlockchainAnchor
@@ -28,8 +29,12 @@ def submit_report(request):
     return render(request, 'reports/submit.html')
 
 def report_status(request, reference_code):
-    report = get_object_or_404(Report, reference_code=reference_code)
-    return render(request, 'reports/status.html', {'report': report})
+    try:
+        report = Report.objects.get(reference_code=reference_code)
+        return render(request, 'reports/status.html', {'report': report})
+    except Report.DoesNotExist:
+        messages.error(request, f"Report with reference code '{reference_code}' not found. Please check the code and try again.")
+        return redirect('report_status_main')
 
 def report_status_lookup(request):
     """Render the status page without a specific report so users can search for their reference code.
