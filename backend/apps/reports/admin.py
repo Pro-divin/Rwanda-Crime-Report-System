@@ -255,36 +255,59 @@ class ReportAdmin(admin.ModelAdmin):
 
     # ========== MEDIA PREVIEW ==========
     def media_file_preview(self, obj):
+        """Display actual media file preview or download link"""
         if obj.media_file:
             file_url = obj.media_file.url
             file_name = obj.media_file.name.split('/')[-1]
+            
             # Check if it's an image
             image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
             is_image = any(file_name.lower().endswith(ext) for ext in image_extensions)
             
             if is_image:
+                # Display actual image inline with thumbnail
                 return format_html(
-                    '<div style="max-width: 300px;"><img src="{}" style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;"/><br><br>'
-                    '<a href="{}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">View Full Size</a></div>',
+                    '<div style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa; max-width: 400px;">'
+                    '<div style="margin-bottom: 10px;"><strong>📷 Submitted Evidence:</strong></div>'
+                    '<img src="{}" style="max-width: 100%; height: auto; max-height: 300px; border-radius: 5px; margin-bottom: 15px;" />'
+                    '<br><a href="{}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">🔍 View Full Size</a>'
+                    '</div>',
                     file_url, file_url
                 )
             else:
+                # For videos, audio, documents, etc.
+                file_type = file_name.split('.')[-1].upper()
                 return format_html(
-                    '<div style="padding: 10px; background: #f0f0f0; border-radius: 5px;">'
-                    '<strong>📁 File:</strong> {}<br>'
-                    '<a href="{}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">Download File</a>'
+                    '<div style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa; max-width: 400px;">'
+                    '<div style="margin-bottom: 10px;"><strong>📎 Submitted Evidence:</strong></div>'
+                    '<div style="padding: 20px; background: white; border-radius: 5px; text-align: center; margin-bottom: 15px;">'
+                    '<div style="font-size: 48px; margin-bottom: 10px;">📁</div>'
+                    '<div style="font-weight: bold; color: #333;">{}</div>'
+                    '<div style="font-size: 12px; color: #666; margin-top: 5px;">{} File</div>'
+                    '</div>'
+                    '<a href="{}" target="_blank" download style="display: inline-block; padding: 8px 12px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">⬇️ Download Evidence</a>'
                     '</div>',
-                    file_name, file_url
+                    file_name, file_type, file_url
                 )
+        
+        # If IPFS CID exists but no local file
         elif obj.ipfs_cid:
             return format_html(
-                '<div style="padding: 10px; background: #e8f4f8; border-radius: 5px; border: 1px solid #0ea5e9;">'
-                '<strong>🌐 IPFS:</strong> {}<br>'
-                '<a href="https://ipfs.io/ipfs/{}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">View via IPFS</a>'
+                '<div style="border: 2px solid #0ea5e9; padding: 15px; border-radius: 8px; background: #e8f4f8; max-width: 400px;">'
+                '<div style="margin-bottom: 10px;"><strong>🌐 IPFS Distributed Storage:</strong></div>'
+                '<div style="padding: 10px; background: white; border-radius: 5px; word-break: break-all; margin-bottom: 10px; font-family: monospace; font-size: 12px; color: #333;">'
+                'CID: {}</div>'
+                '<a href="https://ipfs.io/ipfs/{}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-right: 5px;">📡 View on IPFS</a>'
                 '</div>',
-                obj.ipfs_cid[:20] + '...', obj.ipfs_cid
+                obj.ipfs_cid, obj.ipfs_cid
             )
-        return format_html('<em style="color: #999;">No media file uploaded</em>')
+        
+        return format_html(
+            '<div style="padding: 15px; background: #f0f0f0; border-radius: 8px; color: #666; text-align: center;">'
+            '<div style="font-size: 24px; margin-bottom: 10px;">❌</div>'
+            '<em>No evidence media submitted</em>'
+            '</div>'
+        )
     media_file_preview.short_description = "Evidence Media"
     # -------------------------------
     # JSON EVIDENCE PREVIEW
