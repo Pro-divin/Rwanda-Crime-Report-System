@@ -81,7 +81,14 @@
         .logo-text {
             font-weight: 700;
             font-size: 1.2rem;
-            color: var(--primary-color);
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-text:hover {
+            opacity: 0.8;
         }
 
         .nav-menu {
@@ -738,7 +745,7 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <div class="flag-icon"></div>
-                <span class="logo-text">Rwanda Crime Report System</span>
+                <a href="#home" class="logo-text" onclick="scrollToElement(event, '#home')">Rwanda Crime Report System</a>
             </div>
             <div class="nav-menu">
                 <a href="#home" class="nav-link">Home</a>
