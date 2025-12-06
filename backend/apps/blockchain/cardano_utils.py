@@ -260,24 +260,58 @@ class CardanoEvidenceAnchoring:
         
         # 2. Get Wallet Info
         try:
+            import json
+            import base64
+            import tempfile
             from django.conf import settings
+            
             root_dir = settings.BASE_DIR.parent
             
-            # Try backend/keys/payment.skey first (Standard location)
-            skey_path = root_dir / "backend" / "keys" / "payment.skey"
+            # First try to load from environment (for cloud deployments like Render)
+            signing_key_env = os.environ.get('CARDANO_SIGNING_KEY')
             
-            if not skey_path.exists():
-                # Fallback to secure/payment.skey.json
-                skey_path = root_dir / "secure" / "payment.skey.json"
+            if signing_key_env:
+                print("Loading signing key from environment variable (cloud deployment)...")
+                try:
+                    # Assume it's base64 encoded JSON
+                    key_data = base64.b64decode(signing_key_env).decode('utf-8')
+                    key_json = json.loads(key_data)
+                    
+                    # Write to temp file and load
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.skey', delete=False) as tmp:
+                        json.dump(key_json, tmp)
+                        tmp_path = tmp.name
+                    
+                    try:
+                        signing_key = PaymentExtendedSigningKey.load(tmp_path)
+                    except Exception:
+                        signing_key = PaymentSigningKey.load(tmp_path)
+                    
+                    os.unlink(tmp_path)
+                except Exception as e:
+                    print(f"Failed to load from environment: {e}")
+                    signing_key = None
+            else:
+                signing_key = None
             
-            if not skey_path.exists():
-                raise FileNotFoundError(f"Signing key not found at {skey_path}")
+            # If not in environment, try local file (development)
+            if signing_key is None:
+                print("Loading signing key from local file (development)...")
+                # Try backend/keys/payment.skey first (Standard location)
+                skey_path = root_dir / "backend" / "keys" / "payment.skey"
                 
-            # Load key based on type in file or try both
-            try:
-                signing_key = PaymentExtendedSigningKey.load(str(skey_path))
-            except Exception:
-                signing_key = PaymentSigningKey.load(str(skey_path))
+                if not skey_path.exists():
+                    # Fallback to secure/payment.skey.json
+                    skey_path = root_dir / "secure" / "payment.skey.json"
+                
+                if not skey_path.exists():
+                    raise FileNotFoundError(f"Signing key not found at {skey_path}. Please set CARDANO_SIGNING_KEY env var for cloud deployments.")
+                    
+                # Load key based on type in file or try both
+                try:
+                    signing_key = PaymentExtendedSigningKey.load(str(skey_path))
+                except Exception:
+                    signing_key = PaymentSigningKey.load(str(skey_path))
                 
             verification_key = signing_key.to_verification_key()
             
