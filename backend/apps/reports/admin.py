@@ -256,11 +256,36 @@ class ReportAdmin(admin.ModelAdmin):
     # ========== MEDIA PREVIEW ==========
     def media_file_preview(self, obj):
         if obj.media_file:
-            return format_html('<a href="{}" target="_blank">View File</a>', obj.media_file.url)
+            file_url = obj.media_file.url
+            file_name = obj.media_file.name.split('/')[-1]
+            # Check if it's an image
+            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+            is_image = any(file_name.lower().endswith(ext) for ext in image_extensions)
+            
+            if is_image:
+                return format_html(
+                    '<div style="max-width: 300px;"><img src="{}" style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;"/><br><br>'
+                    '<a href="{}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">View Full Size</a></div>',
+                    file_url, file_url
+                )
+            else:
+                return format_html(
+                    '<div style="padding: 10px; background: #f0f0f0; border-radius: 5px;">'
+                    '<strong>📁 File:</strong> {}<br>'
+                    '<a href="{}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">Download File</a>'
+                    '</div>',
+                    file_name, file_url
+                )
         elif obj.ipfs_cid:
-            return format_html('<a href="https://ipfs.io/ipfs/{}" target="_blank">View IPFS File</a>', obj.ipfs_cid)
-        return "No File"
-    media_file_preview.short_description = "Media Preview"
+            return format_html(
+                '<div style="padding: 10px; background: #e8f4f8; border-radius: 5px; border: 1px solid #0ea5e9;">'
+                '<strong>🌐 IPFS:</strong> {}<br>'
+                '<a href="https://ipfs.io/ipfs/{}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">View via IPFS</a>'
+                '</div>',
+                obj.ipfs_cid[:20] + '...', obj.ipfs_cid
+            )
+        return format_html('<em style="color: #999;">No media file uploaded</em>')
+    media_file_preview.short_description = "Evidence Media"
     # -------------------------------
     # JSON EVIDENCE PREVIEW
     # -------------------------------
