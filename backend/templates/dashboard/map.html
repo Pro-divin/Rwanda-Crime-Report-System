@@ -517,11 +517,58 @@
     display: block;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Responsive - Mobile First */
+@media (max-width: 480px) {
     #map {
-        height: 60vh;
-        min-height: 400px;
+        height: 50vh;
+        min-height: 300px;
+    }
+    
+    .map-stats {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .stat-item {
+        min-width: calc(50% - 4px);
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .map-toolbar {
+        flex-direction: column;
+        padding: 8px;
+        gap: 8px;
+    }
+    
+    .toolbar-group {
+        border-right: none;
+        padding-right: 0;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .layer-switcher {
+        left: 5px;
+        top: 55px;
+        max-width: 90vw;
+    }
+    
+    .toolbar-btn {
+        min-height: 40px;
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    #map {
+        height: 55vh;
+        min-height: 350px;
     }
     
     .map-stats {
@@ -529,7 +576,7 @@
     }
     
     .stat-item {
-        min-width: calc(50% - 8px);
+        min-width: calc(50% - 10px);
     }
     
     .map-toolbar {
@@ -545,6 +592,22 @@
     .layer-switcher {
         left: 10px;
         top: 60px;
+    }
+}
+
+@media (min-width: 769px) {
+    #map {
+        height: 100vh;
+        min-height: 600px;
+    }
+    
+    .map-toolbar {
+        flex-direction: row;
+    }
+    
+    .toolbar-group {
+        border-right: 1px solid #ddd;
+        padding-right: 15px;
     }
 }
 </style>
