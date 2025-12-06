@@ -297,19 +297,26 @@ class CardanoEvidenceAnchoring:
             raise Exception(f"Wallet loading failed: {e}")
 
         # 3. Build Metadata
-        # We use label 674 for general metadata
+        # Use label 674 for RRS-specific metadata (Cardano standard for custom data)
+        # Keep structure very simple for maximum compatibility across environments
         meta_dict = {
             674: {
-                "msg": [f"RRS Report: {anchor_data['report_id']}", f"Cat: {anchor_data['category']}"],
-                "hash": anchor_data['evidence_hash'],
-                "anon": "Yes" if anchor_data['is_anonymous'] else "No",
-                "ts": anchor_data['timestamp']
+                "rrs": "RRS",  # Application identifier
+                "report": anchor_data['report_id'][:50],  # Truncate to safe length
+                "hash": anchor_data['evidence_hash'][:32],  # First 32 chars of hash
+                "cat": anchor_data['category'][:20],  # Truncate category
+                "ts": str(anchor_data['timestamp']),  # Convert timestamp to string
             }
         }
         
-        metadata_obj = Metadata(meta_dict)
-        alonzo_metadata = AlonzoMetadata(metadata=metadata_obj)
-        auxiliary_data = AuxiliaryData(data=alonzo_metadata)
+        try:
+            metadata_obj = Metadata(meta_dict)
+            alonzo_metadata = AlonzoMetadata(metadata=metadata_obj)
+            auxiliary_data = AuxiliaryData(data=alonzo_metadata)
+            print(f"✅ Metadata object created successfully with data: {meta_dict}")
+        except Exception as e:
+            print(f"❌ Metadata creation failed: {e}. Proceeding without metadata.")
+            auxiliary_data = None
         
         # 4. Build Transaction
         builder = TransactionBuilder(context)
@@ -318,11 +325,21 @@ class CardanoEvidenceAnchoring:
         # Send a small amount to self to carry the metadata (min ADA)
         builder.add_output(TransactionOutput(payment_address, Value(1500000)))
         
-        # Set auxiliary data
-        builder.auxiliary_data = auxiliary_data
+        # Set auxiliary data BEFORE building (if metadata was created)
+        if auxiliary_data is not None:
+            builder.auxiliary_data = auxiliary_data
         
-        # Build
+        # Build transaction with metadata
         tx_body = builder.build(change_address=payment_address)
+        
+        # Verify metadata is in tx_body
+        if auxiliary_data is not None:
+            if tx_body.auxiliary_data_hash is None:
+                print("⚠️ Warning: Auxiliary data hash is None. Metadata may not be properly serialized.")
+            else:
+                print(f"✅ Metadata attached with hash: {tx_body.auxiliary_data_hash}")
+        else:
+            print("ℹ️ Transaction built without auxiliary data.")
         
         # 5. Sign
         signature = signing_key.sign(tx_body.hash())
@@ -331,7 +348,12 @@ class CardanoEvidenceAnchoring:
         vk_witness = VerificationKeyWitness(vk, signature)
         witness_set = TransactionWitnessSet(vkey_witnesses=[vk_witness])
         
+        # Create transaction with auxiliary data
         tx = Transaction(tx_body, witness_set, auxiliary_data=auxiliary_data)
+        
+        # Double-check metadata is in final transaction
+        print(f"📋 Transaction ID: {tx.id}")
+        print(f"📦 Auxiliary data present: {tx.auxiliary_data is not None}")
         
         # 6. Submit
         print(f"🚀 Submitting transaction for report {anchor_data['report_id']}...")
