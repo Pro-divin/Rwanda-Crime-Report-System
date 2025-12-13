@@ -1,0 +1,327 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Consent - Rwanda Crime Report System</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .legal-container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .legal-header {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+            padding: 30px;
+            margin: -40px -40px 30px -40px;
+            border-radius: 8px 8px 0 0;
+        }
+        .legal-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .legal-header .update-date {
+            margin-top: 10px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        h2 {
+            color: #28a745;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #1e7e34;
+            margin-top: 20px;
+        }
+        .consent-item {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .consent-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            vertical-align: middle;
+        }
+        .consent-item label {
+            display: inline;
+            cursor: pointer;
+        }
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .highlight-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        .signature-section {
+            background: #e9ecef;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        .signature-section input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background: #1e7e34;
+        }
+        @media (max-width: 768px) {
+            .legal-container {
+                margin: 15px;
+                padding: 20px;
+            }
+            .legal-header {
+                margin: -20px -20px 20px -20px;
+                padding: 20px;
+            }
+            .legal-header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-container">
+        <div class="legal-header">
+            <h1>✅ User Consent Statement</h1>
+            <div class="update-date">Last Updated: January 2025</div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>📋 Purpose:</strong> This consent statement explains what you agree to when using the Rwanda Crime Report System (RCRS). Read carefully before submitting any reports.
+        </div>
+
+        <h2>1. Introduction</h2>
+        <p>By submitting a report through RCRS, you voluntarily consent to the collection, processing, storage, and sharing of your data as described in this statement. This consent is required under Rwanda's <strong>Law N° 60/2018 relating to the protection of personal data and privacy</strong>.</p>
+
+        <h2>2. What You Are Consenting To</h2>
+        <p>Please review each item below. By clicking "I Agree" or submitting a report, you confirm your consent to ALL of the following:</p>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-1" disabled>
+            <label for="consent-1">
+                <strong>1. Data Collection & Processing:</strong> I consent to RCRS collecting and processing my incident report details, including location, date/time, description, and any media evidence I voluntarily submit.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-2" disabled>
+            <label for="consent-2">
+                <strong>2. Law Enforcement Sharing:</strong> I understand and consent to my report being shared with Rwanda National Police (RNP), Rwanda Investigation Bureau (RIB), the Office of the Prosecutor General, and courts of competent jurisdiction.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-3" disabled>
+            <label for="consent-3">
+                <strong>3. Blockchain Immutability:</strong> I acknowledge that my report will be permanently anchored to the Cardano blockchain and <strong>CANNOT be deleted, edited, or modified</strong> after submission.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-4" disabled>
+            <label for="consent-4">
+                <strong>4. IPFS Distributed Storage:</strong> I consent to my evidence media being stored on IPFS (InterPlanetary File System), a decentralized network where files are distributed globally and may remain accessible indefinitely.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-5" disabled>
+            <label for="consent-5">
+                <strong>5. Media Capture Policy Compliance:</strong> I confirm that all photos, videos, and audio recordings I submit were captured lawfully, without violating privacy rights or Rwanda's Penal Code (Law N° 68/2018, Art. 219).
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-6" disabled>
+            <label for="consent-6">
+                <strong>6. Truthfulness & Accuracy:</strong> I certify that all information in my report is truthful and accurate to the best of my knowledge. I understand that submitting false reports is a criminal offense punishable by imprisonment (Law N° 68/2018, Art. 290).
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-7" disabled>
+            <label for="consent-7">
+                <strong>7. No Guarantee of Police Action:</strong> I understand that submitting a report does NOT guarantee police investigation, arrest of suspects, prosecution, or any specific outcome.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-8" disabled>
+            <label for="consent-8">
+                <strong>8. Device Metadata Collection:</strong> I consent to the collection of device information (IP address, browser type, operating system, device model) for fraud prevention and report verification.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-9" disabled>
+            <label for="consent-9">
+                <strong>9. International Data Transfers:</strong> I consent to my data being transferred to international systems (Cardano blockchain nodes, IPFS gateways, cloud hosting providers) in compliance with Rwanda's data protection laws.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-10" disabled>
+            <label for="consent-10">
+                <strong>10. Anonymous Reporting Limitations:</strong> If I choose to submit an anonymous report, I understand that law enforcement may not be able to contact me for follow-up or additional information.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-11" disabled>
+            <label for="consent-11">
+                <strong>11. Data Retention:</strong> I consent to RCRS retaining my report data for the duration of any investigation plus 7 years, and blockchain records permanently.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-12" disabled>
+            <label for="consent-12">
+                <strong>12. Third-Party Service Providers:</strong> I consent to RCRS using third-party services (Blockfrost API for blockchain, Pinata for IPFS, Render.com for hosting) to process and store my data.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-13" disabled>
+            <label for="consent-13">
+                <strong>13. No Liability for Police Inaction:</strong> I understand that RCRS is a reporting platform only and accepts no liability for law enforcement decisions, delays, or failures to investigate.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-14" disabled>
+            <label for="consent-14">
+                <strong>14. Security Limitations:</strong> I acknowledge that while RCRS implements industry-standard security measures, no system is 100% secure. I accept the risk of data breaches or unauthorized access.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-15" disabled>
+            <label for="consent-15">
+                <strong>15. Intellectual Property Rights:</strong> I warrant that I have the legal right to submit all media evidence and grant RCRS a perpetual, irrevocable license to store, distribute, and share it with authorities.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-16" disabled>
+            <label for="consent-16">
+                <strong>16. Indemnification:</strong> I agree to indemnify RCRS from any claims, damages, or legal fees arising from my violation of Rwanda law or third-party rights.
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-17" disabled>
+            <label for="consent-17">
+                <strong>17. Emergency Disclaimer:</strong> I understand that RCRS is NOT an emergency service. For immediate assistance, I will call 112 (Police/Fire/Ambulance) or 113 (Police Direct).
+            </label>
+        </div>
+
+        <div class="consent-item">
+            <input type="checkbox" id="consent-18" disabled>
+            <label for="consent-18">
+                <strong>18. Terms & Policies Review:</strong> I confirm that I have read and understood the full <a href="/legal/terms/" target="_blank">Terms & Conditions</a>, <a href="/legal/privacy/" target="_blank">Privacy Policy</a>, and <a href="/legal/disclaimer/" target="_blank">Legal Disclaimer</a>.
+            </label>
+        </div>
+
+        <h2>3. Special Consent for Sensitive Reports</h2>
+        <div class="warning-box">
+            <strong>⚠️ Gender-Based Violence (GBV) Reports:</strong><br>
+            If reporting GBV, you additionally consent to your report being shared with:
+            <ul>
+                <li>ISANGE One Stop Centers</li>
+                <li>Rwanda Investigation Bureau (RIB) - GBV Unit</li>
+                <li>Ministry of Gender and Family Promotion (MIGEPROF)</li>
+            </ul>
+            <p>For urgent GBV assistance, call <strong>3512</strong> or <strong>116</strong>.</p>
+        </div>
+
+        <h2>4. Withdrawal of Consent</h2>
+        <p>You may withdraw consent for future communications or data processing by contacting <strong>privacy@rcrs.gov.rw</strong>. However:</p>
+        <ul>
+            <li>❌ Blockchain-anchored reports <strong>CANNOT be deleted</strong></li>
+            <li>❌ IPFS-stored media <strong>CANNOT be removed</strong></li>
+            <li>✅ Personal identifiers can be anonymized upon request</li>
+            <li>✅ Future contact from RCRS can be stopped</li>
+        </ul>
+
+        <h2>5. Electronic Signature & Acceptance</h2>
+        <div class="signature-section">
+            <p><strong>Electronic Consent Declaration:</strong></p>
+            <p>By typing your name below or clicking "I Agree" during report submission, you provide your electronic signature and consent to all terms stated above. This electronic signature has the same legal effect as a handwritten signature under Rwanda's ICT Law (Law N° 24/2016).</p>
+            
+            <label for="full-name"><strong>Full Name (Optional for Anonymous Reports):</strong></label>
+            <input type="text" id="full-name" placeholder="Enter your full name">
+            
+            <label for="email"><strong>Email Address (Optional):</strong></label>
+            <input type="text" id="email" placeholder="your.email@example.com">
+            
+            <label for="date"><strong>Date:</strong></label>
+            <input type="text" id="date" value="January 2025" readonly>
+        </div>
+
+        <h2>6. Language & Understanding</h2>
+        <p>This consent statement is provided in English. By proceeding, you confirm that:</p>
+        <ul>
+            <li>You understand the content of this statement</li>
+            <li>You have had the opportunity to ask questions or seek clarification</li>
+            <li>You are providing consent voluntarily and without coercion</li>
+        </ul>
+
+        <h2>7. Contact for Questions</h2>
+        <p>If you have questions about this consent statement:</p>
+        <ul>
+            <li><strong>Email:</strong> privacy@rcrs.gov.rw</li>
+            <li><strong>Data Protection Officer:</strong> dpo@rcrs.gov.rw</li>
+            <li><strong>Rwanda Utilities Regulatory Authority (RURA):</strong> info@rura.rw</li>
+        </ul>
+
+        <div class="highlight-box" style="margin-top: 40px;">
+            <strong>✅ Final Acknowledgment</strong><br>
+            I, the user, have read and understood this User Consent Statement. I voluntarily consent to all terms described above and acknowledge that this consent is required to use the Rwanda Crime Report System.
+        </div>
+
+        <a href="javascript:history.back()" class="back-link">← Back to System</a>
+    </div>
+</body>
+</html>

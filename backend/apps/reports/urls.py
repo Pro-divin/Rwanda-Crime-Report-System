@@ -1,5 +1,9 @@
 from django.urls import path
 from . import views
+from .legal_views import (
+    TermsConditionsView, PrivacyPolicyView,
+    LegalDisclaimerView, UserConsentView
+)
 
 urlpatterns = [
     path('', views.homepage, name='homepage'),
@@ -13,4 +17,8 @@ urlpatterns = [
     path('api/report/status/<str:reference_code>/', views.ReportStatusAPI.as_view(), name='api_report_status'),
     path('api/reports/list/', views.ReportListAPI.as_view(), name='api_reports_list'),
     path('api/ipfs/upload/', views.AsyncIPFSUploadAPI.as_view(), name='api_ipfs_upload'),
+    path('legal/terms/', TermsConditionsView.as_view(), name='legal_terms'),
+    path('legal/privacy/', PrivacyPolicyView.as_view(), name='legal_privacy'),
+    path('legal/disclaimer/', LegalDisclaimerView.as_view(), name='legal_disclaimer'),
+    path('legal/consent/', UserConsentView.as_view(), name='legal_consent'),
 ]

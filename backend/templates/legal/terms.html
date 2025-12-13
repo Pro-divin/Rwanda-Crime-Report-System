@@ -1,0 +1,291 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions - Rwanda Crime Report System</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .legal-container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .legal-header {
+            background: linear-gradient(135deg, #0088ce 0%, #005a8c 100%);
+            color: white;
+            padding: 30px;
+            margin: -40px -40px 30px -40px;
+            border-radius: 8px 8px 0 0;
+        }
+        .legal-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .legal-header .update-date {
+            margin-top: 10px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        h2 {
+            color: #0088ce;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #005a8c;
+            margin-top: 20px;
+        }
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #0088ce;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #0088ce;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background: #005a8c;
+        }
+        @media (max-width: 768px) {
+            .legal-container {
+                margin: 15px;
+                padding: 20px;
+            }
+            .legal-header {
+                margin: -20px -20px 20px -20px;
+                padding: 20px;
+            }
+            .legal-header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-container">
+        <div class="legal-header">
+            <h1>📜 Terms & Conditions</h1>
+            <div class="update-date">Last Updated: January 2025</div>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ IMPORTANT NOTICE:</strong> By using the Rwanda Crime Report System (RCRS), you agree to these Terms & Conditions and acknowledge that all submitted reports are permanent and immutable once recorded on the Cardano blockchain.
+        </div>
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing or using the Rwanda Crime Report System ("RCRS," "System," "Service"), you agree to be bound by these Terms & Conditions. If you do not agree, you must discontinue use immediately.</p>
+
+        <h2>2. System Purpose & Scope</h2>
+        <p>RCRS is a public blockchain-based reporting platform designed to:</p>
+        <ul>
+            <li>Enable citizens to report crimes, incidents, and emergencies</li>
+            <li>Provide tamper-proof evidence storage via IPFS and Cardano blockchain</li>
+            <li>Support law enforcement agencies (RNP, RIB) with verified reports</li>
+            <li>Maintain transparency and accountability in Rwanda's justice system</li>
+        </ul>
+
+        <h2>3. Eligibility & User Requirements</h2>
+        <h3>3.1 Who Can Use the System</h3>
+        <ul>
+            <li><strong>General Public:</strong> Any person aged 18+ or emancipated minors</li>
+            <li><strong>Witnesses:</strong> Individuals with first-hand knowledge of incidents</li>
+            <li><strong>Victims:</strong> Persons directly affected by crimes</li>
+            <li><strong>Organizations:</strong> Legal entities reporting institutional matters</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>📝 Anonymous Reporting:</strong> You may submit reports anonymously, but note that this may limit law enforcement's ability to contact you for follow-up.
+        </div>
+
+        <h2>4. Media Capture & Use Policy</h2>
+        <div class="warning-box">
+            <strong>🚨 CRITICAL COMPLIANCE REQUIREMENT</strong>
+        </div>
+        <p>This section governs the capture, submission, and use of photographic, video, and audio evidence. Violations may result in criminal prosecution under Rwanda law.</p>
+
+        <h3>4.1 Permitted Media Uses</h3>
+        <p>You may capture and submit media ONLY when:</p>
+        <ol>
+            <li><strong>Public Incidents:</strong> Events occurring in public spaces with no expectation of privacy</li>
+            <li><strong>Emergency Situations:</strong> Active crimes, accidents, or dangers requiring urgent documentation</li>
+            <li><strong>Witness Documentation:</strong> Evidence of incidents you personally witnessed</li>
+            <li><strong>Personal Property:</strong> Crimes affecting your own property or person</li>
+            <li><strong>Consent Obtained:</strong> All identifiable persons have provided written consent</li>
+        </ol>
+
+        <h3>4.2 Prohibited Media Captures</h3>
+        <div class="warning-box">
+            <strong>❌ STRICTLY FORBIDDEN:</strong>
+            <ul>
+                <li>Private conversations without all parties' consent</li>
+                <li>Intimate spaces (bathrooms, bedrooms, private residences without permission)</li>
+                <li>Content violating privacy rights of children (Law N° 68/2018, Art. 219)</li>
+                <li>Non-consensual images of sexual nature</li>
+                <li>Fabricated or doctored media presented as real evidence</li>
+                <li>Media obtained through illegal surveillance or trespassing</li>
+            </ul>
+        </div>
+
+        <h3>4.3 Legal Basis (Rwanda Law)</h3>
+        <ul>
+            <li><strong>Law N° 60/2018:</strong> Protection of personal data and privacy</li>
+            <li><strong>Law N° 68/2018 (Penal Code):</strong>
+                <ul>
+                    <li>Art. 219: Violation of privacy (imprisonment up to 2 years)</li>
+                    <li>Art. 290: False testimony (imprisonment 1-5 years)</li>
+                    <li>Art. 304: Cyberstalking and harassment</li>
+                </ul>
+            </li>
+            <li><strong>Law N° 24/2016 (ICT Law):</strong> Digital evidence standards</li>
+        </ul>
+
+        <h2>5. User Responsibilities</h2>
+        <h3>5.1 Truthfulness & Accuracy</h3>
+        <p>You certify that all submitted information is:</p>
+        <ul>
+            <li>Truthful and accurate to the best of your knowledge</li>
+            <li>Based on personal observation or reliable sources</li>
+            <li>Not deliberately misleading or fabricated</li>
+        </ul>
+
+        <div class="warning-box">
+            <strong>⚖️ False Reporting Penalties:</strong> Submitting false reports is a criminal offense under Law N° 68/2018, Art. 290, punishable by imprisonment of 1-5 years and fines up to 2,000,000 RWF.
+        </div>
+
+        <h3>5.2 Prohibited Activities</h3>
+        <p>Users must NOT:</p>
+        <ol>
+            <li>Submit defamatory, racist, or hate speech content</li>
+            <li>Use the system for harassment or intimidation</li>
+            <li>Attempt to manipulate blockchain data or IPFS files</li>
+            <li>Impersonate law enforcement or government officials</li>
+            <li>Upload malware, viruses, or malicious code</li>
+            <li>Abuse the system to spam or overload infrastructure</li>
+        </ol>
+
+        <h2>6. Blockchain & IPFS Immutability</h2>
+        <div class="highlight-box">
+            <strong>🔒 PERMANENT RECORD NOTICE:</strong><br>
+            Once your report is anchored to the Cardano blockchain:
+            <ul>
+                <li><strong>Cannot be deleted:</strong> Reports remain permanently on-chain</li>
+                <li><strong>Cannot be edited:</strong> No modifications possible after submission</li>
+                <li><strong>Publicly verifiable:</strong> Anyone can verify report authenticity via blockchain explorer</li>
+                <li><strong>IPFS storage:</strong> Media files are distributed across decentralized network</li>
+            </ul>
+        </div>
+
+        <h2>7. Data Sharing with Authorities</h2>
+        <p>By submitting a report, you authorize RCRS to share your data with:</p>
+        <ul>
+            <li><strong>Rwanda National Police (RNP)</strong></li>
+            <li><strong>Rwanda Investigation Bureau (RIB)</strong></li>
+            <li><strong>Office of the Prosecutor General</strong></li>
+            <li><strong>Courts of competent jurisdiction</strong></li>
+        </ul>
+
+        <h2>8. User Account & Authentication</h2>
+        <p>If you create an account:</p>
+        <ul>
+            <li>You are responsible for maintaining password security</li>
+            <li>Accounts are non-transferable</li>
+            <li>You must notify us immediately of unauthorized access</li>
+            <li>You accept liability for all actions under your account</li>
+        </ul>
+
+        <h2>9. Intellectual Property</h2>
+        <p>By submitting content, you grant RCRS a perpetual, irrevocable license to:</p>
+        <ul>
+            <li>Store and distribute your media via IPFS/blockchain</li>
+            <li>Share with law enforcement and judicial authorities</li>
+            <li>Use for system improvement and analytics (anonymized)</li>
+        </ul>
+        <p>You retain ownership of your original content but acknowledge the license granted above.</p>
+
+        <h2>10. Limitation of Liability</h2>
+        <div class="info-box">
+            RCRS provides an incident reporting platform. We do NOT:
+            <ul>
+                <li>Guarantee police response or investigation</li>
+                <li>Provide emergency dispatch services (call 112 for emergencies)</li>
+                <li>Offer legal advice or representation</li>
+                <li>Guarantee system uptime or availability</li>
+            </ul>
+        </div>
+
+        <h2>11. Indemnification</h2>
+        <p>You agree to indemnify and hold harmless RCRS, its operators, and partners from any claims arising from:</p>
+        <ul>
+            <li>Your violation of these Terms</li>
+            <li>Your violation of Rwanda law</li>
+            <li>Infringement of third-party rights</li>
+            <li>False or misleading reports</li>
+        </ul>
+
+        <h2>12. Modifications to Terms</h2>
+        <p>RCRS reserves the right to modify these Terms. Continued use after changes constitutes acceptance. Major changes will be announced via system notifications.</p>
+
+        <h2>13. Governing Law & Dispute Resolution</h2>
+        <p>These Terms are governed by Rwanda law. Disputes shall be resolved through:</p>
+        <ol>
+            <li>Good faith negotiation</li>
+            <li>Mediation (if negotiation fails)</li>
+            <li>Rwanda courts of competent jurisdiction</li>
+        </ol>
+
+        <h2>14. Severability</h2>
+        <p>If any provision is found unenforceable, the remaining provisions remain in full effect.</p>
+
+        <h2>15. Contact Information</h2>
+        <p>For questions regarding these Terms:</p>
+        <ul>
+            <li><strong>Email:</strong> legal@rcrs.gov.rw</li>
+            <li><strong>Rwanda Utilities Regulatory Authority (RURA):</strong> info@rura.rw</li>
+            <li><strong>Emergency:</strong> Call 112</li>
+        </ul>
+
+        <div class="highlight-box" style="margin-top: 40px;">
+            <strong>✅ Acceptance Acknowledgment</strong><br>
+            By clicking "I Agree" during report submission, you confirm that you have read, understood, and agree to these Terms & Conditions.
+        </div>
+
+        <a href="javascript:history.back()" class="back-link">← Back to System</a>
+    </div>
+</body>
+</html>

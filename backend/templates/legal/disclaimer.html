@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Disclaimer - Rwanda Crime Report System</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .legal-container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .legal-header {
+            background: linear-gradient(135deg, #dc3545 0%, #a02a37 100%);
+            color: white;
+            padding: 30px;
+            margin: -40px -40px 30px -40px;
+            border-radius: 8px 8px 0 0;
+        }
+        .legal-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .legal-header .update-date {
+            margin-top: 10px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        h2 {
+            color: #dc3545;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #a02a37;
+            margin-top: 20px;
+        }
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background: #a02a37;
+        }
+        @media (max-width: 768px) {
+            .legal-container {
+                margin: 15px;
+                padding: 20px;
+            }
+            .legal-header {
+                margin: -20px -20px 20px -20px;
+                padding: 20px;
+            }
+            .legal-header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-container">
+        <div class="legal-header">
+            <h1>⚠️ Legal Disclaimer</h1>
+            <div class="update-date">Last Updated: January 2025</div>
+        </div>
+
+        <div class="warning-box">
+            <strong>🚨 CRITICAL NOTICE:</strong> This disclaimer limits the legal liability of the Rwanda Crime Report System (RCRS) and its operators. By using this system, you accept these limitations. If you do not agree, you must discontinue use immediately.
+        </div>
+
+        <h2>1. Nature of Service</h2>
+        <p>The Rwanda Crime Report System (RCRS) is a <strong>reporting platform only</strong>. RCRS:</p>
+        <ul>
+            <li>✅ Provides a channel to submit incident reports</li>
+            <li>✅ Stores evidence on decentralized systems (IPFS, Cardano blockchain)</li>
+            <li>✅ Shares reports with Rwanda National Police (RNP) and Rwanda Investigation Bureau (RIB)</li>
+            <li>❌ Does NOT provide emergency response services</li>
+            <li>❌ Does NOT guarantee police investigation or action</li>
+            <li>❌ Does NOT offer legal advice or representation</li>
+        </ul>
+
+        <h2>2. No Emergency Services</h2>
+        <div class="warning-box">
+            <strong>🚨 EMERGENCY DISCLAIMER:</strong><br>
+            RCRS is <strong>NOT an emergency service</strong>. For immediate assistance:
+            <ul>
+                <li><strong>Police/Fire/Ambulance:</strong> Call 112</li>
+                <li><strong>Police Direct:</strong> Call 113</li>
+                <li><strong>Gender-Based Violence Hotline:</strong> Call 3512 or 116</li>
+            </ul>
+            <p>Do NOT rely on RCRS for time-sensitive emergencies. Reports may take hours or days to process.</p>
+        </div>
+
+        <h2>3. No Guarantee of Police Response</h2>
+        <p>Submitting a report through RCRS does NOT guarantee:</p>
+        <ol>
+            <li>Investigation by law enforcement</li>
+            <li>Arrest of suspects</li>
+            <li>Prosecution of crimes</li>
+            <li>Compensation or restitution</li>
+            <li>Follow-up communication from authorities</li>
+        </ol>
+        <p>Police prioritize cases based on severity, available resources, and investigative merit. RCRS has no control over law enforcement decisions.</p>
+
+        <h2>4. System Availability & Technical Limitations</h2>
+        <h3>4.1 No Uptime Guarantee</h3>
+        <p>RCRS is provided "AS IS" without warranties. We do not guarantee:</p>
+        <ul>
+            <li>Continuous system availability (24/7 uptime)</li>
+            <li>Error-free operation</li>
+            <li>Compatibility with all devices and browsers</li>
+            <li>Success of blockchain transactions (dependent on Cardano network)</li>
+            <li>Availability of IPFS-stored media (dependent on distributed network)</li>
+        </ul>
+
+        <h3>4.2 Blockchain & IPFS Dependencies</h3>
+        <div class="highlight-box">
+            <strong>⛓️ Third-Party Dependencies:</strong>
+            <ul>
+                <li><strong>Cardano Blockchain:</strong> Transactions may fail due to network congestion or insufficient funds</li>
+                <li><strong>IPFS Network:</strong> Media files may become inaccessible if nodes go offline</li>
+                <li><strong>Blockfrost API:</strong> Service outages may delay blockchain anchoring</li>
+            </ul>
+            <p>RCRS is not liable for failures of these external systems.</p>
+        </div>
+
+        <h2>5. Accuracy & Reliability of Reports</h2>
+        <h3>5.1 User-Generated Content</h3>
+        <p>All reports are submitted by users. RCRS does NOT:</p>
+        <ul>
+            <li>Verify the truthfulness of reports before blockchain anchoring</li>
+            <li>Investigate the accuracy of claims</li>
+            <li>Fact-check evidence media</li>
+            <li>Authenticate reporter identities (for anonymous reports)</li>
+        </ul>
+
+        <h3>5.2 Limitation of Liability for False Reports</h3>
+        <div class="warning-box">
+            <strong>⚖️ LEGAL CONSEQUENCES OF FALSE REPORTING:</strong><br>
+            Submitting false or malicious reports is a <strong>criminal offense</strong> under Rwanda Law N° 68/2018 (Penal Code):
+            <ul>
+                <li><strong>Art. 290 - False Testimony:</strong> Imprisonment of 1-5 years + fines up to 2,000,000 RWF</li>
+                <li><strong>Art. 304 - Cyberstalking:</strong> Imprisonment of 2-5 years if report is used for harassment</li>
+                <li><strong>Art. 219 - Privacy Violation:</strong> Imprisonment of up to 2 years for illegal media capture</li>
+            </ul>
+            <p>RCRS is not liable for damages caused by false reports. Users assume full legal responsibility.</p>
+        </div>
+
+        <h2>6. Data Security & Privacy</h2>
+        <h3>6.1 Security Measures</h3>
+        <p>While we implement industry-standard security (TLS encryption, access controls), we cannot guarantee:</p>
+        <ul>
+            <li>Absolute protection against cyberattacks or data breaches</li>
+            <li>Prevention of unauthorized access by sophisticated adversaries</li>
+            <li>Security of data after submission to third-party systems (RNP, RIB)</li>
+        </ul>
+
+        <h3>6.2 Blockchain Privacy Limitations</h3>
+        <p>Blockchain transactions are <strong>publicly visible</strong>. While RCRS does not include personal data in on-chain metadata, sophisticated analysis may reveal:</p>
+        <ul>
+            <li>Transaction timestamps</li>
+            <li>IP addresses (if not using VPN/Tor)</li>
+            <li>Device fingerprints</li>
+        </ul>
+        <p>For maximum privacy, consider anonymous reporting and using privacy tools.</p>
+
+        <h2>7. Intellectual Property</h2>
+        <p>By submitting media evidence, you warrant that you have the legal right to do so. RCRS is not liable for:</p>
+        <ul>
+            <li>Copyright infringement claims from third parties</li>
+            <li>Privacy violations arising from user-submitted content</li>
+            <li>Unlawful surveillance or unauthorized recordings</li>
+        </ul>
+
+        <h2>8. Indemnification</h2>
+        <p>You agree to indemnify, defend, and hold harmless RCRS, its operators, employees, and partners from any claims, damages, or legal fees arising from:</p>
+        <ol>
+            <li>Your violation of Rwanda law</li>
+            <li>Your violation of third-party rights (privacy, copyright, defamation)</li>
+            <li>False or malicious reports submitted through your account</li>
+            <li>Unauthorized access to your account due to weak passwords or credential sharing</li>
+        </ol>
+
+        <h2>9. Maximum Liability Cap</h2>
+        <div class="highlight-box">
+            <strong>💰 LIABILITY LIMITATION:</strong><br>
+            In no event shall RCRS or its operators be liable for:
+            <ul>
+                <li><strong>Indirect, incidental, or consequential damages</strong></li>
+                <li><strong>Lost profits, data, or business opportunities</strong></li>
+                <li><strong>Personal injury or property damage</strong> (except where prohibited by law)</li>
+            </ul>
+            <p><strong>Maximum Liability:</strong> Total liability shall not exceed 100,000 RWF per incident, or the amount you paid for system use (whichever is lower). Since RCRS is a free public service, this typically means <strong>zero liability</strong>.</p>
+        </div>
+
+        <h2>10. Governing Law & Jurisdiction</h2>
+        <p>This disclaimer is governed by Rwanda law. Any disputes shall be resolved in Rwanda courts. Applicable laws include:</p>
+        <ul>
+            <li><strong>Law N° 60/2018:</strong> Data protection and privacy</li>
+            <li><strong>Law N° 68/2018:</strong> Penal Code (criminal offenses)</li>
+            <li><strong>Law N° 24/2016:</strong> ICT Law (electronic evidence)</li>
+        </ul>
+
+        <h2>11. Medical & Legal Advice Disclaimer</h2>
+        <p>RCRS does NOT provide:</p>
+        <ul>
+            <li><strong>Medical advice:</strong> If injured, seek immediate medical attention (Call 912 or visit a hospital)</li>
+            <li><strong>Legal advice:</strong> For legal representation, consult a licensed attorney</li>
+            <li><strong>Psychological counseling:</strong> Contact ISANGE One Stop Center (3512) for trauma support</li>
+        </ul>
+
+        <h2>12. Third-Party Links & Integrations</h2>
+        <p>RCRS may link to external websites or integrate third-party services. We are not responsible for:</p>
+        <ul>
+            <li>Content or privacy practices of external sites</li>
+            <li>Downtime or failures of third-party APIs</li>
+            <li>Changes to terms of service by external providers</li>
+        </ul>
+
+        <h2>13. Force Majeure</h2>
+        <p>RCRS is not liable for service interruptions caused by events beyond our control, including:</p>
+        <ul>
+            <li>Natural disasters (earthquakes, floods, volcanic eruptions)</li>
+            <li>Civil unrest, war, or terrorism</li>
+            <li>Government actions (internet shutdowns, legal orders)</li>
+            <li>Cyberattacks (DDoS, ransomware)</li>
+            <li>Infrastructure failures (power outages, ISP downtime)</li>
+        </ul>
+
+        <h2>14. Changes to This Disclaimer</h2>
+        <p>We reserve the right to modify this disclaimer at any time. Continued use after changes constitutes acceptance. Major changes will be announced via system notifications.</p>
+
+        <h2>15. Severability</h2>
+        <p>If any provision of this disclaimer is found unenforceable, the remaining provisions remain in full effect.</p>
+
+        <h2>16. Language</h2>
+        <p>This disclaimer is provided in English. In the event of conflict between translations, the English version prevails.</p>
+
+        <h2>17. Entire Agreement</h2>
+        <p>This disclaimer, together with the Terms & Conditions and Privacy Policy, constitutes the entire agreement between users and RCRS.</p>
+
+        <h2>18. Contact for Legal Matters</h2>
+        <p>For legal questions or notices:</p>
+        <ul>
+            <li><strong>Email:</strong> legal@rcrs.gov.rw</li>
+            <li><strong>Rwanda Utilities Regulatory Authority (RURA):</strong> info@rura.rw</li>
+        </ul>
+
+        <h2>19. Final Warning</h2>
+        <div class="warning-box">
+            <strong>⚠️ ACKNOWLEDGMENT REQUIRED:</strong><br>
+            By clicking "I Accept" or submitting a report, you confirm that you have read and understood this Legal Disclaimer and agree to its terms. If you do not agree, you must immediately stop using RCRS.
+        </div>
+
+        <a href="javascript:history.back()" class="back-link">← Back to System</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,413 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Rwanda Crime Report System</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .legal-container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .legal-header {
+            background: linear-gradient(135deg, #0088ce 0%, #005a8c 100%);
+            color: white;
+            padding: 30px;
+            margin: -40px -40px 30px -40px;
+            border-radius: 8px 8px 0 0;
+        }
+        .legal-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .legal-header .update-date {
+            margin-top: 10px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        h2 {
+            color: #0088ce;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #005a8c;
+            margin-top: 20px;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #0088ce;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .highlight-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table th {
+            background: #0088ce;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover {
+            background: #f5f5f5;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #0088ce;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background: #005a8c;
+        }
+        @media (max-width: 768px) {
+            .legal-container {
+                margin: 15px;
+                padding: 20px;
+            }
+            .legal-header {
+                margin: -20px -20px 20px -20px;
+                padding: 20px;
+            }
+            .legal-header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-container">
+        <div class="legal-header">
+            <h1>🔒 Privacy Policy</h1>
+            <div class="update-date">Last Updated: January 2025</div>
+        </div>
+
+        <div class="info-box">
+            <strong>📋 Compliance:</strong> This Privacy Policy complies with Rwanda's <strong>Law N° 60/2018 relating to the protection of personal data and privacy</strong> and is supervised by the Rwanda Utilities Regulatory Authority (RURA).
+        </div>
+
+        <h2>1. Introduction</h2>
+        <p>The Rwanda Crime Report System (RCRS) is committed to protecting your privacy while maintaining transparency and accountability in crime reporting. This Privacy Policy explains how we collect, use, store, and share your personal data.</p>
+
+        <h2>2. Data Controller Information</h2>
+        <ul>
+            <li><strong>System Name:</strong> Rwanda Crime Report System (RCRS)</li>
+            <li><strong>Purpose:</strong> Public crime and incident reporting platform</li>
+            <li><strong>Regulatory Authority:</strong> Rwanda Utilities Regulatory Authority (RURA)</li>
+            <li><strong>Contact:</strong> privacy@rcrs.gov.rw</li>
+        </ul>
+
+        <h2>3. Data We Collect</h2>
+        <h3>3.1 Mandatory Data (Required for Report Submission)</h3>
+        <table>
+            <tr>
+                <th>Data Category</th>
+                <th>Examples</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td>Incident Details</td>
+                <td>Title, description, location, date/time</td>
+                <td>Report processing & investigation</td>
+            </tr>
+            <tr>
+                <td>Evidence Media</td>
+                <td>Photos, videos, audio recordings</td>
+                <td>Forensic analysis & verification</td>
+            </tr>
+            <tr>
+                <td>Device Metadata</td>
+                <td>IP address, browser type, device model</td>
+                <td>Authenticity verification & fraud prevention</td>
+            </tr>
+            <tr>
+                <td>Blockchain Data</td>
+                <td>Transaction hash, IPFS CID, timestamp</td>
+                <td>Tamper-proof record keeping</td>
+            </tr>
+        </table>
+
+        <h3>3.2 Optional Data (For Identified Reports)</h3>
+        <table>
+            <tr>
+                <th>Data Type</th>
+                <th>Collection Method</th>
+                <th>Retention Period</th>
+            </tr>
+            <tr>
+                <td>Reporter Name</td>
+                <td>Voluntary submission</td>
+                <td>Duration of investigation + 7 years</td>
+            </tr>
+            <tr>
+                <td>Contact Information</td>
+                <td>Email, phone number (optional)</td>
+                <td>Duration of investigation + 2 years</td>
+            </tr>
+            <tr>
+                <td>National ID (for witnesses)</td>
+                <td>User account creation</td>
+                <td>As required by law</td>
+            </tr>
+        </table>
+
+        <h3>3.3 Anonymous Reporting</h3>
+        <div class="highlight-box">
+            <strong>✅ You CAN submit reports anonymously!</strong>
+            <ul>
+                <li>No name, email, or phone number required</li>
+                <li>Only incident details and evidence needed</li>
+                <li>Blockchain record does not contain personal identifiers</li>
+                <li>Limitation: Follow-up communication not possible</li>
+            </ul>
+        </div>
+
+        <h2>4. How We Use Your Data</h2>
+        <h3>4.1 Primary Uses</h3>
+        <ol>
+            <li><strong>Law Enforcement Support:</strong> Share reports with RNP, RIB, and prosecutor's office</li>
+            <li><strong>Evidence Preservation:</strong> Store media on IPFS; anchor hashes to Cardano blockchain</li>
+            <li><strong>Report Verification:</strong> Generate cryptographic proof of authenticity</li>
+            <li><strong>System Administration:</strong> Maintain infrastructure, prevent abuse, improve performance</li>
+        </ol>
+
+        <h3>4.2 Secondary Uses (Anonymized Data Only)</h3>
+        <ul>
+            <li>Crime trend analysis and statistics</li>
+            <li>Public safety research and policy development</li>
+            <li>System performance optimization</li>
+            <li>Training machine learning models for fraud detection</li>
+        </ul>
+
+        <h2>5. Data Sharing & Disclosure</h2>
+        <h3>5.1 Mandatory Sharing (By Law)</h3>
+        <div class="warning-box">
+            <strong>⚖️ Legal Obligation:</strong> We MUST share your report data with:
+            <ul>
+                <li><strong>Rwanda National Police (RNP):</strong> All crime reports</li>
+                <li><strong>Rwanda Investigation Bureau (RIB):</strong> Serious crimes & corruption</li>
+                <li><strong>Office of the Prosecutor General:</strong> Upon judicial request</li>
+                <li><strong>Courts:</strong> When subpoenaed or during legal proceedings</li>
+            </ul>
+        </div>
+
+        <h3>5.2 Third-Party Service Providers</h3>
+        <table>
+            <tr>
+                <th>Service</th>
+                <th>Provider</th>
+                <th>Data Shared</th>
+            </tr>
+            <tr>
+                <td>Blockchain Anchoring</td>
+                <td>Cardano Network (via Blockfrost API)</td>
+                <td>Report hash, metadata (no personal data)</td>
+            </tr>
+            <tr>
+                <td>Distributed Storage</td>
+                <td>IPFS via Pinata</td>
+                <td>Encrypted media files</td>
+            </tr>
+            <tr>
+                <td>Hosting Infrastructure</td>
+                <td>Render.com (USA)</td>
+                <td>Server logs, IP addresses</td>
+            </tr>
+        </table>
+
+        <h3>5.3 What We NEVER Share</h3>
+        <ul>
+            <li>❌ Personal data with advertisers or marketers</li>
+            <li>❌ Anonymous report metadata with non-law enforcement entities</li>
+            <li>❌ Evidence media with unauthorized third parties</li>
+            <li>❌ Blockchain private keys or authentication credentials</li>
+        </ul>
+
+        <h2>6. Data Security Measures</h2>
+        <h3>6.1 Technical Safeguards</h3>
+        <ul>
+            <li><strong>Encryption:</strong> TLS 1.3 for data in transit; AES-256 for data at rest</li>
+            <li><strong>Blockchain Immutability:</strong> Reports permanently recorded on Cardano</li>
+            <li><strong>IPFS Content Addressing:</strong> Cryptographic verification of media files</li>
+            <li><strong>Access Controls:</strong> Role-based permissions; multi-factor authentication</li>
+        </ul>
+
+        <h3>6.2 Organizational Safeguards</h3>
+        <ul>
+            <li>Regular security audits and penetration testing</li>
+            <li>Employee training on data protection and confidentiality</li>
+            <li>Incident response plan for data breaches</li>
+            <li>Limited access to personal data (need-to-know basis)</li>
+        </ul>
+
+        <h2>7. Your Rights Under Rwanda Law</h2>
+        <p>Pursuant to Law N° 60/2018, you have the right to:</p>
+
+        <h3>7.1 Access & Correction</h3>
+        <ul>
+            <li><strong>Access:</strong> Request a copy of your submitted reports (email privacy@rcrs.gov.rw)</li>
+            <li><strong>Correction:</strong> Request correction of inaccurate personal data</li>
+        </ul>
+
+        <h3>7.2 Limitations on Deletion</h3>
+        <div class="warning-box">
+            <strong>⚠️ BLOCKCHAIN IMMUTABILITY:</strong><br>
+            Due to the permanent nature of blockchain technology:
+            <ul>
+                <li>Report data <strong>cannot be deleted</strong> once anchored on Cardano</li>
+                <li>IPFS files are distributed and may remain accessible indefinitely</li>
+                <li>Personal identifiers can be anonymized upon request, but report content remains</li>
+            </ul>
+            <p><strong>Before submitting, ensure you understand this permanence.</strong></p>
+        </div>
+
+        <h3>7.3 Objection & Withdrawal</h3>
+        <ul>
+            <li>Object to processing for secondary uses (anonymized analytics)</li>
+            <li>Withdraw consent for future communications</li>
+            <li>Request account deletion (does not affect existing blockchain records)</li>
+        </ul>
+
+        <h2>8. Data Retention</h2>
+        <table>
+            <tr>
+                <th>Data Type</th>
+                <th>Retention Period</th>
+                <th>Legal Basis</th>
+            </tr>
+            <tr>
+                <td>Blockchain Records</td>
+                <td>Permanent (immutable)</td>
+                <td>Technical limitation</td>
+            </tr>
+            <tr>
+                <td>IPFS Media Files</td>
+                <td>Permanent (distributed)</td>
+                <td>Evidence preservation</td>
+            </tr>
+            <tr>
+                <td>Personal Contact Data</td>
+                <td>Investigation duration + 2 years</td>
+                <td>Law N° 68/2018</td>
+            </tr>
+            <tr>
+                <td>Server Logs</td>
+                <td>12 months</td>
+                <td>Security & fraud prevention</td>
+            </tr>
+        </table>
+
+        <h2>9. Cookies & Tracking</h2>
+        <h3>9.1 Essential Cookies</h3>
+        <ul>
+            <li>Session authentication (login status)</li>
+            <li>CSRF protection tokens</li>
+            <li>Language preference</li>
+        </ul>
+
+        <h3>9.2 Analytics (Optional)</h3>
+        <ul>
+            <li>Anonymized page view statistics</li>
+            <li>System performance monitoring</li>
+            <li>No third-party advertising cookies</li>
+        </ul>
+
+        <h2>10. International Data Transfers</h2>
+        <div class="info-box">
+            <strong>🌍 Cross-Border Transfers:</strong>
+            <ul>
+                <li><strong>Cardano Blockchain:</strong> Globally distributed network (EU, USA, Asia)</li>
+                <li><strong>IPFS:</strong> Decentralized storage across multiple jurisdictions</li>
+                <li><strong>Hosting (Render.com):</strong> USA-based servers with EU data protection compliance</li>
+            </ul>
+            <p>All transfers comply with Rwanda's data protection laws and international agreements.</p>
+        </div>
+
+        <h2>11. Children's Privacy</h2>
+        <p>RCRS is not intended for users under 18 without parental consent. If a child submits a report, their data is protected under Law N° 68/2018, Art. 219 (Protection of Children's Privacy).</p>
+
+        <h2>12. Data Breach Notification</h2>
+        <p>In the event of a data breach:</p>
+        <ol>
+            <li>We will notify RURA within 72 hours</li>
+            <li>Affected users will be notified within 7 days</li>
+            <li>Breach details, impact, and remediation steps will be disclosed</li>
+        </ol>
+
+        <h2>13. Changes to This Privacy Policy</h2>
+        <p>We may update this policy to reflect legal changes or system improvements. Major changes will be announced with 30 days' notice via:</p>
+        <ul>
+            <li>System notification banner</li>
+            <li>Email to registered users</li>
+            <li>Public notice on homepage</li>
+        </ul>
+
+        <h2>14. Regulatory Oversight</h2>
+        <p>This system is subject to oversight by:</p>
+        <ul>
+            <li><strong>Rwanda Utilities Regulatory Authority (RURA)</strong>
+                <ul>
+                    <li>Email: info@rura.rw</li>
+                    <li>Website: www.rura.rw</li>
+                    <li>Phone: +250 252 586 963</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>15. Contact Us</h2>
+        <p>For privacy-related questions or to exercise your rights:</p>
+        <ul>
+            <li><strong>Email:</strong> privacy@rcrs.gov.rw</li>
+            <li><strong>Data Protection Officer:</strong> dpo@rcrs.gov.rw</li>
+            <li><strong>Mailing Address:</strong> RCRS Data Protection Office, Kigali, Rwanda</li>
+        </ul>
+
+        <div class="highlight-box" style="margin-top: 40px;">
+            <strong>✅ Acknowledgment</strong><br>
+            By using RCRS, you acknowledge that you have read and understood this Privacy Policy and consent to the collection, use, and sharing of your data as described above.
+        </div>
+
+        <a href="javascript:history.back()" class="back-link">← Back to System</a>
+    </div>
+</body>
+</html>
