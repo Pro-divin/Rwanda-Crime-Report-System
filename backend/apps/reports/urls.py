@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 from .legal_views import (
     TermsConditionsView, PrivacyPolicyView,
@@ -7,6 +8,7 @@ from .legal_views import (
 
 urlpatterns = [
     path('', views.homepage, name='homepage'),
+    path('home/', RedirectView.as_view(pattern_name='homepage', permanent=True), name='home_redirect'),
     path('report/submit/', views.submit_report, name='submit_report'),
     path('report/status/', views.report_status_lookup, name='report_status_main'),
     path('report/status/<str:reference_code>/', views.report_status, name='report_status'),
