@@ -1120,7 +1120,7 @@
                     <h3>Location & Media</h3>
                     
                     <div class="form-group">
-                        <label>GPS Location</label>
+                        <label>GPS Location <span style="color: var(--danger-color);">*</span></label>
                         <div class="location-actions">
                             <button type="button" id="getLocation" class="btn btn-outline">
                                 📍 Get Current Location
@@ -1129,10 +1129,11 @@
                         </div>
                         <div class="coordinates">
                             <input type="number" id="latitude" name="latitude" step="any" 
-                                   placeholder="Latitude" class="coord-input">
+                                   placeholder="Latitude" class="coord-input" required>
                             <input type="number" id="longitude" name="longitude" step="any" 
-                                   placeholder="Longitude" class="coord-input">
+                                   placeholder="Longitude" class="coord-input" required>
                         </div>
+                        <small class="help-text">⚠️ Location is required to help authorities respond to your report. Click the button above to capture your current position.</small>
                     </div>
 
                     <div class="form-group">

@@ -102,7 +102,21 @@
                         </table>
 
                         {% if report.latitude and report.longitude %}
-                        <div id="miniMap" style="height: 150px; margin-top: 15px; border-radius: 4px;"></div>
+                        <div style="margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <strong>📍 Report Location</strong>
+                                <a href="{% url 'map_view' %}?ref={{ report.reference_code }}" 
+                                   style="color: #0088ce; text-decoration: none; font-size: 13px;">
+                                    🗺️ View on Full Map →
+                                </a>
+                            </div>
+                            <div id="miniMap" style="height: 250px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; position: relative; overflow: hidden;"
+                                 onclick="window.location.href='{% url 'map_view' %}?ref={{ report.reference_code }}'" 
+                                 title="Click to view on full map"></div>
+                            <div style="margin-top: 8px; font-size: 12px; color: #666; text-align: center;">
+                                📌 Lat: {{ report.latitude|floatformat:6 }}, Lng: {{ report.longitude|floatformat:6 }}
+                            </div>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -728,12 +742,73 @@ window.addEventListener('load', () => {
 
 // Initialize mini map
 {% if report.latitude and report.longitude %}
-var miniMap = L.map('miniMap').setView([{{ report.latitude }}, {{ report.longitude }}], 15);
+var miniMap = L.map('miniMap', {
+    zoomControl: true,
+    scrollWheelZoom: false,
+    dragging: true,
+    doubleClickZoom: false
+}).setView([{{ report.latitude }}, {{ report.longitude }}], 16);
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(miniMap);
-L.marker([{{ report.latitude }}, {{ report.longitude }}]).addTo(miniMap)
-    .bindPopup('Report Location');
+
+// Add custom marker with pulse animation
+var markerIcon = L.divIcon({
+    className: 'custom-marker-icon',
+    html: `<div style="
+        width: 40px;
+        height: 40px;
+        background: #e63946;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        animation: miniMapPulse 2s ease-in-out infinite;
+    ">📍</div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40]
+});
+
+var marker = L.marker([{{ report.latitude }}, {{ report.longitude }}], { icon: markerIcon })
+    .addTo(miniMap)
+    .bindPopup('<strong>{{ report.reference_code }}</strong><br>{{ report.location_description }}<br><em>Click map to view full details</em>');
+
+// Add click overlay hint
+var overlayHint = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd: function() {
+        var div = L.DomUtil.create('div', 'map-hint');
+        div.innerHTML = '<div style="background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">🗺️ Click to open full map</div>';
+        div.onclick = function(e) {
+            e.stopPropagation();
+            window.location.href = '{% url "map_view" %}?ref={{ report.reference_code }}';
+        };
+        return div;
+    }
+});
+miniMap.addControl(new overlayHint());
+
+// Add pulse animation CSS
+var style = document.createElement('style');
+style.textContent = `
+    @keyframes miniMapPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    #miniMap:hover {
+        box-shadow: 0 4px 16px rgba(0,136,206,0.4) !important;
+        transition: box-shadow 0.3s ease;
+    }
+    .leaflet-container {
+        cursor: pointer !important;
+    }
+`;
+document.head.appendChild(style);
 {% endif %}
 </script>
 

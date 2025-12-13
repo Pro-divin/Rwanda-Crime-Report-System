@@ -43,14 +43,6 @@
             </div>
             <div class="card-body">
                 <canvas id="categoryChart" height="250"></canvas>
-        <div class="container">
-            <section aria-labelledby="workflow-title" style="margin: 20px 0;">
-                <h2 id="workflow-title">Evidence Workflow</h2>
-                <figure style="margin:0;">
-                    <img src="/static/images/workflow.svg" alt="Rwanda Crime Report System evidence workflow showing steps: user report, IPFS storage, Cardano anchoring, admin verification" style="max-width:100%; height:auto; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.08);" />
-                    <figcaption style="font-size:14px; color:#64748b; margin-top:8px;">How reports move from submission to distributed storage and immutable blockchain proof.</figcaption>
-                </figure>
-            </section>
             </div>
         </div>
 
@@ -127,7 +119,15 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-                        <div class="container">
+<script>
+    // Parse JSON data from Django context
+    const categoryData = JSON.parse('{{ category_data|safe }}');
+    const statusData = JSON.parse('{{ status_distribution|safe }}');
+    const timelineData = JSON.parse('{{ timeline_data|safe }}');
+    const responseData = JSON.parse('{{ response_distribution|safe }}');
+    
+    // Color palette
+    const colors = {
         primary: '#0088ce',
         success: '#28a745',
         warning: '#ffc107',
